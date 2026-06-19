@@ -1,0 +1,520 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+    /* ── Colors ── */
+    --color-void: #000000;
+    --color-carbon: #1c1c1c;
+    --color-graphite: #4d4d4d;
+    --color-steel: #808080;
+    --color-ash: #ababab;
+    --color-paper: #ffffff;
+    --color-periwinkle-annotation: #7089ba;
+
+    /* Legacy compatibility maps */
+    --bg-color: var(--color-void);
+    --card-bg: var(--color-carbon);
+    --text-main: var(--color-paper);
+    --text-muted: var(--color-steel);
+    --text-faint: var(--color-ash);
+
+    /* ── Typography — Font Families ── */
+    --font-sans-serif: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-raveo-variable: 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-geist-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+    /* ── Typography — Scale ── */
+    --text-caption: 12px;
+    --leading-caption: 1.2;
+    --text-body-sm: 14px;
+    --leading-body-sm: 1.6;
+    --tracking-body-sm: -0.14px;
+    --text-body: 16px;
+    --leading-body: 1.6;
+    --tracking-body: -0.16px;
+    --text-subheading: 24px;
+    --leading-subheading: 1.4;
+    --tracking-subheading: -0.24px;
+    --text-heading: 32px;
+    --leading-heading: 1.2;
+    --tracking-heading: -0.32px;
+    --text-display: 70px;
+    --leading-display: 1.1;
+    --tracking-display: -2.8px;
+
+    /* ── Typography — Weights ── */
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-w1000: 900; /* Inter max weight — substitute for Raveo 1000 */
+
+    /* ── Spacing ── */
+    --spacing-4: 4px;
+    --spacing-5: 5px;
+    --spacing-6: 6px;
+    --spacing-8: 8px;
+    --spacing-9: 9px;
+    --spacing-10: 10px;
+    --spacing-12: 12px;
+    --spacing-16: 16px;
+    --spacing-18: 18px;
+    --spacing-20: 20px;
+    --spacing-24: 24px;
+    --spacing-28: 28px;
+    --spacing-34: 34px;
+    --spacing-44: 44px;
+    --spacing-50: 50px;
+    --spacing-100: 100px;
+
+    /* ── Layout ── */
+    --page-max-width: 1200px;
+    --section-gap: 80px;
+    --card-padding: 24px;
+    --element-gap: 10px;
+
+    /* ── Border Radius ── */
+    --radius-md: 6px;
+    --radius-2xl: 20px;
+    --radius-full: 50px;
+    --radius-full-2: 100px;
+    --radius-full-3: 188px;
+
+    /* ── Named Radii ── */
+    --radius-nav: 6px;
+    --radius-tags: 100px;
+    --radius-buttons: 100px;
+    --radius-featuretiles: 20px;
+    --radius-iconcontainers: 50px;
+
+    /* ── Surfaces ── */
+    --surface-void-canvas: #000000;
+    --surface-carbon-surface: #1c1c1c;
+    --surface-periwinkle-wash: #7089ba;
+}
+
+/* ── Base Reset ── */
+*, html, body, [class*="css"] {
+    font-family: var(--font-raveo-variable);
+}
+
+#MainMenu, footer { visibility: hidden; }
+
+/* ── App Background — achromatic Carbon→Void radial (desk lamp effect) ── */
+.stApp {
+    background-color: var(--color-void);
+    background-image: radial-gradient(circle at 50% 30%, var(--color-carbon) 0%, var(--color-void) 65%);
+}
+
+/* ── Block Container ── */
+.block-container {
+    padding: 1.5rem 2.5rem;
+    max-width: var(--page-max-width);
+}
+
+/* ── Streamlit hr (---) — dashed divider ── */
+.stApp hr, .stMarkdown hr {
+    border: none !important;
+    border-top: 1px dashed var(--color-graphite) !important;
+    margin: var(--spacing-24) 0 !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   GLASS CARD — Carbon surface with dashed containment
+   ══════════════════════════════════════════════════════════════════════════════ */
+.glass-card {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-featuretiles) !important;
+    padding: var(--card-padding);
+    box-shadow: none !important;
+    transition: border-color 0.2s ease;
+}
+.glass-card:hover {
+    border-color: var(--color-steel) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   METRIC CARD (.mc) — achromatic data tile
+   ══════════════════════════════════════════════════════════════════════════════ */
+.mc {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-featuretiles) !important;
+    padding: var(--card-padding);
+    box-shadow: none !important;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+.mc:hover {
+    border-color: var(--color-steel) !important;
+}
+.mc-val {
+    font-family: var(--font-raveo-variable) !important;
+    font-size: var(--text-heading);
+    font-weight: var(--font-weight-w1000);
+    color: var(--color-paper) !important;
+    letter-spacing: var(--tracking-heading);
+    line-height: var(--leading-heading);
+}
+.mc-lbl {
+    font-family: var(--font-geist-mono) !important;
+    font-size: 9px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--color-steel) !important;
+    margin-top: var(--spacing-6);
+    font-weight: var(--font-weight-medium);
+}
+
+/* ── Highlight Metric Card (periwinkle annotation border) ── */
+.mc-highlight {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-periwinkle-annotation) !important;
+    border-radius: var(--radius-featuretiles) !important;
+    padding: var(--card-padding);
+    box-shadow: none !important;
+    text-align: center;
+    transition: border-color 0.2s ease;
+}
+.mc-highlight:hover {
+    border-color: var(--color-paper) !important;
+}
+.mc-highlight .mc-val {
+    color: var(--color-periwinkle-annotation) !important;
+    font-family: var(--font-raveo-variable) !important;
+    font-size: var(--text-heading);
+    font-weight: var(--font-weight-w1000);
+    letter-spacing: var(--tracking-heading);
+    line-height: var(--leading-heading);
+}
+.mc-highlight .mc-lbl {
+    font-family: var(--font-geist-mono) !important;
+    font-size: 9px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    color: var(--color-paper) !important;
+    margin-top: var(--spacing-6);
+    font-weight: var(--font-weight-medium);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   METRIC GRID — responsive CSS grid for card layouts
+   ══════════════════════════════════════════════════════════════════════════════ */
+.metric-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--spacing-12);
+    width: 100%;
+    margin-bottom: var(--spacing-24);
+}
+.metric-grid.cols-5 {
+    grid-template-columns: repeat(5, 1fr);
+}
+.metric-grid.cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+.metric-grid.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SECTION LABEL (.sl) — Geist Mono micro-label with dashed underline
+   ══════════════════════════════════════════════════════════════════════════════ */
+.sl {
+    font-family: var(--font-geist-mono) !important;
+    font-size: var(--text-caption) !important;
+    font-weight: var(--font-weight-medium) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.02em !important;
+    color: var(--color-steel) !important;
+    margin-top: var(--spacing-28) !important;
+    margin-bottom: var(--spacing-16) !important;
+    border-left: none !important;
+    padding-left: 0 !important;
+    border-bottom: 1px dashed var(--color-graphite) !important;
+    padding-bottom: var(--spacing-8) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   HERO HEADER BANNER (.hdr) — Carbon surface, achromatic radial wash
+   ══════════════════════════════════════════════════════════════════════════════ */
+.hdr {
+    position: relative;
+    background: var(--color-carbon) !important;
+    background-image: radial-gradient(circle at 70% 30%, rgba(255, 255, 255, 0.02) 0%, transparent 60%);
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-featuretiles);
+    padding: var(--spacing-44) var(--spacing-44);
+    margin-bottom: var(--spacing-28);
+    overflow: hidden;
+    box-shadow: none !important;
+}
+.hdr h1 {
+    font-family: var(--font-raveo-variable) !important;
+    font-size: var(--text-heading) !important;
+    font-weight: var(--font-weight-w1000) !important;
+    letter-spacing: var(--tracking-heading) !important;
+    line-height: var(--leading-heading) !important;
+    color: var(--color-paper) !important;
+    margin: 0;
+}
+.hdr p {
+    font-family: var(--font-raveo-variable) !important;
+    font-size: var(--text-body) !important;
+    line-height: var(--leading-body) !important;
+    letter-spacing: var(--tracking-body) !important;
+    color: var(--color-steel) !important;
+    margin-top: var(--spacing-8);
+    margin-bottom: 0;
+}
+
+/* ── Eyebrow Chip — transparent bg, white dashed border, pill shape ── */
+.hdr-pill {
+    display: inline-block;
+    background: transparent !important;
+    border: 1px dashed var(--color-paper) !important;
+    color: var(--color-paper) !important;
+    border-radius: var(--radius-buttons);
+    padding: var(--spacing-4) var(--spacing-12);
+    font-size: 9px;
+    font-family: var(--font-geist-mono) !important;
+    font-weight: var(--font-weight-medium);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RECEIPT — Carbon surface, mono font
+   ══════════════════════════════════════════════════════════════════════════════ */
+.receipt {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-md);
+    padding: var(--spacing-20) var(--spacing-24);
+    box-shadow: none !important;
+    font-family: var(--font-geist-mono) !important;
+    color: var(--color-ash) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SUCCESS BANNER — no blur, no glow
+   ══════════════════════════════════════════════════════════════════════════════ */
+.success-banner {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-periwinkle-annotation) !important;
+    border-radius: var(--spacing-10);
+    padding: var(--spacing-16) var(--spacing-20);
+    font-size: var(--text-body-sm);
+    color: var(--color-paper) !important;
+    font-weight: var(--font-weight-medium);
+    box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CHART DESCRIPTION — muted body text card
+   ══════════════════════════════════════════════════════════════════════════════ */
+.chart-desc {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--spacing-12);
+    padding: var(--spacing-16) var(--spacing-20);
+    font-size: var(--text-body-sm);
+    color: var(--color-steel) !important;
+    line-height: var(--leading-body-sm);
+}
+.chart-desc strong {
+    font-family: var(--font-raveo-variable) !important;
+    color: var(--color-periwinkle-annotation) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   STREAMLIT TABS
+   ══════════════════════════════════════════════════════════════════════════════ */
+.stTabs [data-baseweb="tab-list"] {
+    background: transparent;
+    border-bottom: 1px dashed var(--color-graphite) !important;
+}
+.stTabs [data-baseweb="tab"] {
+    color: var(--color-steel) !important;
+    font-weight: var(--font-weight-medium);
+    font-size: var(--text-body-sm);
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+}
+.stTabs [aria-selected="true"] {
+    color: var(--color-paper) !important;
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-periwinkle-annotation) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BUTTONS — Outlined Pill, no fill (wireframe button)
+   ══════════════════════════════════════════════════════════════════════════════ */
+.stButton>button {
+    border-radius: var(--radius-buttons) !important;
+    font-family: var(--font-raveo-variable) !important;
+    font-weight: var(--font-weight-medium) !important;
+    font-size: var(--text-body-sm) !important;
+    border: 1px solid var(--color-paper) !important;
+    background-color: transparent !important;
+    color: var(--color-paper) !important;
+    transition: border-color 0.2s ease, color 0.2s ease !important;
+    box-shadow: none !important;
+    padding: var(--spacing-8) var(--spacing-18) !important;
+}
+.stButton>button:hover {
+    border-color: var(--color-periwinkle-annotation) !important;
+    color: var(--color-periwinkle-annotation) !important;
+    background-color: transparent !important;
+}
+.stButton>button[kind="primary"] {
+    background-color: transparent !important;
+    color: var(--color-paper) !important;
+    border: 1px solid var(--color-paper) !important;
+    font-weight: var(--font-weight-medium) !important;
+}
+.stButton>button[kind="primary"]:hover {
+    border-color: var(--color-periwinkle-annotation) !important;
+    color: var(--color-periwinkle-annotation) !important;
+    background-color: transparent !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FORM CONTROLS — Select, Tags, Listbox
+   ══════════════════════════════════════════════════════════════════════════════ */
+div[data-baseweb="select"] {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-md) !important;
+}
+span[data-baseweb="tag"] {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-nav) !important;
+    color: var(--color-paper) !important;
+    font-family: var(--font-geist-mono) !important;
+    font-weight: var(--font-weight-medium) !important;
+}
+ul[role="listbox"] {
+    background: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--spacing-10) !important;
+    box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SLIDER
+   ══════════════════════════════════════════════════════════════════════════════ */
+div[data-baseweb="slider"] > div > div > div {
+    background: var(--color-periwinkle-annotation) !important;
+}
+div[role="slider"] {
+    background: var(--color-paper) !important;
+    border: 1.5px solid var(--color-periwinkle-annotation) !important;
+    box-shadow: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   TABLE
+   ══════════════════════════════════════════════════════════════════════════════ */
+.dataframe {
+    background-color: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR — Carbon surface, dashed containment
+   ══════════════════════════════════════════════════════════════════════════════ */
+[data-testid="collapsedControl"] {
+    top: 1.2rem !important;
+    left: 1.5rem !important;
+}
+
+[data-testid="collapsedControl"] button,
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="stSidebar"] button[aria-label="Close sidebar"],
+[data-testid="stSidebar"] button[class*="st-"] {
+    background-color: var(--color-carbon) !important;
+    border: 1px dashed var(--color-graphite) !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--color-steel) !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+    transition: border-color 0.2s ease !important;
+}
+
+[data-testid="collapsedControl"] button:hover,
+[data-testid="stSidebarCollapseButton"] button:hover,
+[data-testid="stSidebar"] button[aria-label="Close sidebar"]:hover,
+[data-testid="stSidebar"] button[class*="st-"]:hover {
+    border-color: var(--color-periwinkle-annotation) !important;
+    color: var(--color-periwinkle-annotation) !important;
+    background-color: var(--color-carbon) !important;
+}
+
+[data-testid="stSidebar"] {
+    background-color: var(--color-carbon) !important;
+    border-right: 1px dashed var(--color-graphite) !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    background: transparent !important;
+    border-radius: 0px !important;
+}
+
+[data-testid="stSidebar"]::after {
+    display: none !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE — 2-column metric grid on smaller screens
+   ══════════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .metric-grid, .metric-grid.cols-5, .metric-grid.cols-4 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .block-container {
+        padding: var(--spacing-16) var(--spacing-20) !important;
+    }
+    .hdr {
+        padding: var(--spacing-24) var(--spacing-24) !important;
+        margin-bottom: var(--spacing-24) !important;
+    }
+    .hdr h1 {
+        font-size: var(--text-subheading) !important;
+    }
+    .hdr p {
+        font-size: var(--text-body-sm) !important;
+    }
+    .mc-val, .mc-highlight .mc-val {
+        font-size: var(--text-subheading) !important;
+    }
+    .mc, .mc-highlight {
+        padding: var(--spacing-16) !important;
+    }
+    .metric-grid, .metric-grid.cols-5, .metric-grid.cols-4, .metric-grid.cols-2 {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: var(--spacing-8) !important;
+    }
+    .stPlotlyChart {
+        width: 100% !important;
+        overflow-x: auto !important;
+    }
+}
+
+@media (max-width: 480px) {
+    [data-testid="collapsedControl"] {
+        top: var(--spacing-8) !important;
+        left: var(--spacing-8) !important;
+    }
+    [data-testid="collapsedControl"] button {
+        width: 32px !important;
+        height: 32px !important;
+    }
+}
