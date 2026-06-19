@@ -13,7 +13,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
 
-from utils.data_loader import load_clean_data, FEATURE_COLUMNS, FEATURE_LABELS
+from utils.data_loader import load_clean_data, load_labeled_qlde_data, FEATURE_COLUMNS, FEATURE_LABELS
 from utils.mock_models import (
     run_unsupervised_algorithm,
     run_logistic_regression,
@@ -33,8 +33,8 @@ from utils.visualizer import (
 def show_supervised_learning():
     # ── Load Data & Generate Target Labels ────────────────────────────────────────
     df = load_clean_data()
-    # Target labels are derived from K-Means QLDE (k=4) clustering
-    df_clustered, _ = run_unsupervised_algorithm(df, "K-Means QLDE", k=4)
+    # Target labels are loaded directly from precomputed QLDE results (k=6)
+    df_clustered = load_labeled_qlde_data()
 
     # ── Header ────────────────────────────────────────────────────────────────────
     st.markdown("""
@@ -56,7 +56,7 @@ def show_supervised_learning():
             help="Choose a classification model to view its detailed performance, confusion matrix, and feature importances."
         )
         st.markdown("---")
-        st.caption("Training target: 4 customer segments derived from optimal K-Means QLDE clustering.")
+        st.caption("Training target: 6 customer segments derived from optimal K-Means QLDE clustering.")
 
     # ── Train Classifiers and Collect Metrics ─────────────────────────────────────
     with st.spinner("Training classifiers..."):
@@ -198,13 +198,18 @@ def show_supervised_learning():
     with col_form:
         st.markdown("**Enter Customer Transactional Metrics:**")
         with st.form("predict_form"):
-            recency = st.slider("Recency (days since last purchase)", min_value=1, max_value=400, value=45)
-            frequency = st.slider("Frequency (number of transactions)", min_value=1, max_value=50, value=8)
-            monetary = st.number_input("Monetary (total spending £)", min_value=0.0, max_value=50000.0, value=1250.0, step=50.0)
-            avg_spending = st.number_input("Average Spending per Item (£)", min_value=0.0, max_value=5000.0, value=35.0, step=1.0)
-            unique_products = st.slider("Unique Products Purchased", min_value=1, max_value=500, value=65)
-            cancel_freq = st.slider("Cancellation Frequency", min_value=0, max_value=50, value=1)
-            avg_monthly = st.number_input("Avg Monthly Spending (£)", min_value=0.0, max_value=15000.0, value=280.0, step=10.0)
+            recency = st.slider("Recency (days since last purchase)", min_value=1, max_value=365, value=93)
+            frequency = st.slider("Frequency (number of transactions)", min_value=1, max_value=250, value=4)
+            total_products = st.number_input("Total Products Purchased", min_value=1, max_value=100000, value=1500, step=50)
+            monetary = st.number_input("Monetary (total spending £)", min_value=0.0, max_value=300000.0, value=1500.0, step=50.0)
+            avg_spending = st.number_input("Average Spending per Item (£)", min_value=0.0, max_value=10000.0, value=35.0, step=1.0)
+            unique_products = st.slider("Unique Products Purchased", min_value=1, max_value=1000, value=100)
+            avg_days = st.slider("Average Days Between Purchases", min_value=0, max_value=365, value=30)
+            expected_days = st.slider("Expected Days to Next Purchase", min_value=0, max_value=730, value=120)
+            from_uk = st.selectbox("Is Customer from United Kingdom?", ["Yes", "No"])
+            from_uk_val = 1 if from_uk == "Yes" else 0
+            cancel_freq = st.slider("Cancellation Frequency", min_value=0, max_value=150, value=0)
+            avg_monthly = st.number_input("Avg Monthly Spending (£)", min_value=0.0, max_value=50000.0, value=300.0, step=10.0)
 
             submitted = st.form_submit_button("Predict Customer Segment", use_container_width=True)
 
@@ -213,9 +218,13 @@ def show_supervised_learning():
             input_data = pd.DataFrame([{
                 "Recency": recency,
                 "Frequency": frequency,
+                "TotalProducts": total_products,
                 "Monetary": monetary,
                 "AvgSpending": avg_spending,
                 "UniqueProducts": unique_products,
+                "AvgDaysToPurchase": avg_days,
+                "ExpectedPurchaseDays": expected_days,
+                "FromUK": from_uk_val,
                 "CancelFrequency": cancel_freq,
                 "AvgMonthlySpending": avg_monthly,
             }])
@@ -258,12 +267,14 @@ def show_supervised_learning():
 
             st.markdown('<div class="sl">Strategic Marketing Recommendations</div>', unsafe_allow_html=True)
             recommendations = {
-                0: "<b>Champions Segment:</b> Reward with exclusive VIP benefits, early-access campaigns, and referral rewards. Personal account manager outreach is highly effective.",
-                1: "<b>Loyal Customers Segment:</b> Encourage subscription plans, upsell cross-brand packages, and incentivize higher transaction sizes with progressive threshold offers.",
-                2: "<b>At-Risk Customers Segment:</b> Deploy personalized email win-back offers with direct, limited-time 15-20% discounts. Send customer satisfaction surveys to address friction.",
-                3: "<b>New/Inactive Segment:</b> Automate welcome-series drip emails offering onboarding guides and a first-purchase discounts package to build recurring habit loops.",
+                0: "<b>High-Value Segment:</b> Deliver red-carpet treatment. Offer premium loyalty program tiers, exclusive VIP events, dedicated support, and bespoke gifts.",
+                1: "<b>Price-Sensitive Segment:</b> Offer seasonal clearance promotions, high-discount bundles, coupon codes, and cost-efficient alternatives to drive volume.",
+                2: "<b>High-Expectation-UK Segment:</b> Provide high-standard shipping, local UK customer support, and customized product recommendations aligned with domestic trends.",
+                3: "<b>Uncertain-Buyer Segment:</b> Re-engage with surveys to understand friction. Send product guides, testimonials, and small trigger incentives to convert them to active users.",
+                4: "<b>Cautious-Consumer Segment:</b> Offer money-back guarantees, detailed product specifications, social proof, and clear FAQs to ease security and quality concerns.",
+                5: "<b>Balanced Segment:</b> Keep engaged with standard newsletter updates, cross-selling related categories, and milestone-based loyalty rewards.",
             }
-            rec = recommendations.get(pred_cluster, "Design personalized engagement campaigns targeting specific feature anomalies.")
+            rec = recommendations.get(pred_cluster, "Design personalized engagement campaigns targeting specific customer behaviors.")
             st.markdown(f"""
             <div class="glass-card" style="border-left: 4px solid {color};">
                 {rec}

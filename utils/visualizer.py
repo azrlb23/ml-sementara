@@ -12,19 +12,21 @@ import numpy as np
 
 # ── Design Tokens ─────────────────────────────────────────────────────────────
 CLUSTER_COLORS = {
-    0: "#ffffff",   # Paper (White)
-    1: "#808080",   # Steel (Muted Gray)
-    2: "#ababab",   # Ash (Light Gray)
-    3: "#7089ba",   # Periwinkle (Quiet Accent)
-    -1: "#4d4d4d",  # Graphite (Dark Gray / Anomalies)
+    0: "#ffffff",   # High-Value (White)
+    1: "#cccccc",   # Price-Sensitive (Light Gray)
+    2: "#999999",   # High-Expectation-UK (Medium Gray)
+    3: "#666666",   # Uncertain-Buyer (Dark Gray)
+    4: "#444444",   # Cautious-Consumer (Very Dark Gray)
+    5: "#7089ba",   # Balanced (Periwinkle Accent)
 }
 
 CLUSTER_NAMES = {
-    0: "Champions",
-    1: "Loyal Customers",
-    2: "At-Risk Customers",
-    3: "New / Inactive",
-    -1: "Anomaly",
+    0: "High-Value",
+    1: "Price-Sensitive",
+    2: "High-Expectation-UK",
+    3: "Uncertain-Buyer",
+    4: "Cautious-Consumer",
+    5: "Balanced",
 }
 
 PLOTLY_TEMPLATE = "plotly_dark"
@@ -218,7 +220,11 @@ def plot_scatter_2d(df: pd.DataFrame, x: str, y: str, cluster_col: str = "Cluste
 
 def plot_cluster_radar(cluster_profiles: pd.DataFrame) -> go.Figure:
     """Radar / spider chart showing average feature values per cluster."""
-    features = ["Recency", "Frequency", "Monetary", "AvgSpending", "UniqueProducts", "CancelFrequency"]
+    features = [
+        "Recency", "Frequency", "TotalProducts", "Monetary", "AvgSpending", 
+        "UniqueProducts", "AvgDaysToPurchase", "ExpectedPurchaseDays", "FromUK", 
+        "CancelFrequency", "AvgMonthlySpending"
+    ]
     fig = go.Figure()
 
     for _, row in cluster_profiles.iterrows():

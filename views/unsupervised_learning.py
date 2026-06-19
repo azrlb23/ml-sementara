@@ -45,7 +45,7 @@ def show_unsupervised_learning():
             index=4,
             help="Select the clustering optimization strategy to display in detail."
         )
-        n_clusters = st.slider("Number of Clusters (k):", 2, 8, 4)
+        n_clusters = st.slider("Number of Clusters (k):", 2, 8, 6)
         st.markdown("---")
         x_axis = st.selectbox("2D Scatter X-axis", ["Recency", "Frequency", "Monetary", "AvgSpending"], index=0)
         y_axis = st.selectbox("2D Scatter Y-axis", ["Recency", "Frequency", "Monetary", "AvgSpending"], index=2)
@@ -57,8 +57,8 @@ def show_unsupervised_learning():
     # ── 4 Metric Cards (Highlight Lime for QLDE - best algorithm) ─────────────────
     st.markdown(f'<div class="sl">{algorithm} — Model Metrics</div>', unsafe_allow_html=True)
 
-    # Determine if this algorithm yields the overall best results (QLDE at k=4 is the best)
-    is_best = (algorithm == "K-Means QLDE" and n_clusters == 4)
+    # Determine if this algorithm yields the overall best results (QLDE at k=6 is the best)
+    is_best = (algorithm == "K-Means QLDE" and n_clusters == 6)
     card_class = "mc-highlight" if is_best else "mc"
 
     # Metric dictionary keys
@@ -108,7 +108,11 @@ def show_unsupervised_learning():
         st.markdown('<div class="sl">Cluster Profile Radar (Normalized Features)</div>', unsafe_allow_html=True)
         profiles = get_cluster_profiles(df_clustered)
         from sklearn.preprocessing import MinMaxScaler
-        feat_cols = ["Recency", "Frequency", "Monetary", "AvgSpending", "UniqueProducts", "CancelFrequency"]
+        feat_cols = [
+            "Recency", "Frequency", "TotalProducts", "Monetary", "AvgSpending", 
+            "UniqueProducts", "AvgDaysToPurchase", "ExpectedPurchaseDays", "FromUK", 
+            "CancelFrequency", "AvgMonthlySpending"
+        ]
         scaler = MinMaxScaler()
         normalized_profiles = profiles.copy()
         normalized_profiles[feat_cols] = scaler.fit_transform(profiles[feat_cols])
@@ -147,9 +151,13 @@ def show_unsupervised_learning():
         raw_profiles.style.format({
             "Recency": "{:.1f} days",
             "Frequency": "{:.1f} orders",
+            "TotalProducts": "{:.0f} units",
             "Monetary": "£{:,.2f}",
             "AvgSpending": "£{:.2f}",
-            "UniqueProducts": "{:.0f}",
+            "UniqueProducts": "{:.0f} products",
+            "AvgDaysToPurchase": "{:.1f} days",
+            "ExpectedPurchaseDays": "{:.1f} days",
+            "FromUK": "{:.0f}",
             "CancelFrequency": "{:.1f} cancels",
             "AvgMonthlySpending": "£{:.2f}",
         }),

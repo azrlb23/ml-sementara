@@ -5,7 +5,7 @@ Arsitektur Single-Page Application (SPA)
 """
 
 import streamlit as st
-from utils.data_loader import load_clean_data, load_anomalous_data, get_summary_stats
+from utils.data_loader import load_clean_data, get_summary_stats
 
 # ── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -68,7 +68,7 @@ with st.sidebar:
 def show_home():
     # ── Load Data ─────────────────────────────────────────────────────────────────
     df = load_clean_data()
-    df_anomaly = load_anomalous_data()
+    df_anomaly = pd.DataFrame()
     stats = get_summary_stats(df)
 
     # ── Hero Banner ───────────────────────────────────────────────────────────────

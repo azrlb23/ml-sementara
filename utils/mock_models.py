@@ -1,6 +1,7 @@
 """
 utils/mock_models.py
 Implementations for Clustering (Standard & Metaheuristic) & Classification models.
+Aligned with the nplrahman922 'kayis' branch.
 """
 
 import numpy as np
@@ -28,8 +29,17 @@ import joblib
 
 MODELS_DIR = Path(__file__).parent.parent / "models"
 FEATURE_COLUMNS = [
-    "Recency", "Frequency", "Monetary",
-    "AvgSpending", "UniqueProducts", "CancelFrequency", "AvgMonthlySpending",
+    "Recency",
+    "Frequency",
+    "TotalProducts",
+    "Monetary",
+    "AvgSpending",
+    "UniqueProducts",
+    "AvgDaysToPurchase",
+    "ExpectedPurchaseDays",
+    "FromUK",
+    "CancelFrequency",
+    "AvgMonthlySpending",
 ]
 
 def _scale_features(df: pd.DataFrame) -> np.ndarray:
@@ -38,77 +48,51 @@ def _scale_features(df: pd.DataFrame) -> np.ndarray:
 
 # ── Unsupervised Algorithms (Clustering & Metaheuristics) ──────────────────────
 
-# Metaheuristic mock metrics database (for k=4) - kept for backward compatibility
-ALGO_METRICS_K4 = {
-    "K-Means Standard": {
-        "SSE": 8200.5,
-        "Silhouette Score": 0.3852,
-        "Davies-Bouldin Index": 1.254,
-        "Calinski-Harabasz Index": 1850.4,
-    },
-    "K-Means + DE": {
-        "SSE": 7950.2,
-        "Silhouette Score": 0.4125,
-        "Davies-Bouldin Index": 1.152,
-        "Calinski-Harabasz Index": 1980.2,
-    },
-    "K-Means + PSO": {
-        "SSE": 7850.1,
-        "Silhouette Score": 0.4281,
-        "Davies-Bouldin Index": 1.084,
-        "Calinski-Harabasz Index": 2010.5,
-    },
-    "K-Means + EOA": {
-        "SSE": 7720.6,
-        "Silhouette Score": 0.4357,
-        "Davies-Bouldin Index": 1.021,
-        "Calinski-Harabasz Index": 2085.1,
-    },
-    "K-Means QLDE": {
-        "SSE": 7510.4,
-        "Silhouette Score": 0.4589,
-        "Davies-Bouldin Index": 0.941,
-        "Calinski-Harabasz Index": 2190.8,
-    }
-}
-
 @st.cache_data(show_spinner="Running Clustering Algorithm...")
-def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 4) -> tuple[pd.DataFrame, dict]:
+def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 6) -> tuple[pd.DataFrame, dict]:
     """
-    Runs actual clustering optimization on scaled customer features.
+    Runs actual clustering optimization on PCA-reduced customer features (X_pca).
     """
     from utils.algorithms import QLDE, KMeansDE, KMeansPSO, KMeansEOA
+    from utils.data_loader import load_pca_data
     
-    X = _scale_features(df)
+    # Load PCA features (6 principal components)
+    df_pca = load_pca_data()
+    
+    # Align by CustomerID
+    df_pca = df_pca.set_index("CustomerID")
+    df_align = df.set_index("CustomerID")
+    df_pca_aligned = df_pca.reindex(df_align.index)
+    X_pca = df_pca_aligned.values
     
     if algorithm == "K-Means Standard":
         model = KMeans(n_clusters=k, random_state=42, n_init=10)
-        model.fit(X)
+        model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
     elif algorithm == "K-Means + DE":
         model = KMeansDE(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X)
+        model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
     elif algorithm == "K-Means + PSO":
         model = KMeansPSO(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X)
+        model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
     elif algorithm == "K-Means + EOA":
         model = KMeansEOA(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X)
+        model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
     elif algorithm == "K-Means QLDE":
         model = QLDE(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X)
+        model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
     else:
         model = KMeans(n_clusters=k, random_state=42, n_init=10)
-        model.fit(X)
+        model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
 
@@ -116,9 +100,9 @@ def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 4) -> 
     result["Cluster"] = labels
     
     if len(np.unique(labels)) > 1:
-        sil = silhouette_score(X, labels)
-        db = davies_bouldin_score(X, labels)
-        ch = calinski_harabasz_score(X, labels)
+        sil = silhouette_score(X_pca, labels)
+        db = davies_bouldin_score(X_pca, labels)
+        ch = calinski_harabasz_score(X_pca, labels)
     else:
         sil = 0.0
         db = 9.99
@@ -137,25 +121,25 @@ def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 4) -> 
 
 @st.cache_data(show_spinner="Generating Convergence Curves...")
 def get_convergence_curves(max_iter: int = 50) -> pd.DataFrame:
-    """Generates actual SSE convergence data over iterations for the metaheuristics on default dataset."""
-    from utils.data_loader import load_clean_data
+    """Generates actual SSE convergence data over iterations for the metaheuristics on X_pca."""
+    from utils.data_loader import load_pca_data
     from utils.algorithms import QLDE, KMeansDE, KMeansPSO, KMeansEOA
     
-    df = load_clean_data()
-    X = _scale_features(df)
-    k = 4
+    df_pca = load_pca_data().drop(columns=["CustomerID"])
+    X_pca = df_pca.values
+    k = 6
     
     de = KMeansDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    de.fit(X)
+    de.fit(X_pca)
     
     pso = KMeansPSO(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    pso.fit(X)
+    pso.fit(X_pca)
     
     eoa = KMeansEOA(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    eoa.fit(X)
+    eoa.fit(X_pca)
     
     qlde = QLDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    qlde.fit(X)
+    qlde.fit(X_pca)
     
     l = min(len(de.convergence_curve_), len(pso.convergence_curve_), len(eoa.convergence_curve_), len(qlde.convergence_curve_))
     
@@ -169,7 +153,7 @@ def get_convergence_curves(max_iter: int = 50) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner="Evaluating all algorithms for comparison...")
-def get_algorithm_comparison_metrics(df: pd.DataFrame, k: int = 4) -> dict:
+def get_algorithm_comparison_metrics(df: pd.DataFrame, k: int = 6) -> dict:
     """Evaluate all 5 algorithms dynamically to produce the comparison chart."""
     comparison = {}
     for algo in ["K-Means Standard", "K-Means + DE", "K-Means + PSO", "K-Means + EOA", "K-Means QLDE"]:
@@ -183,7 +167,7 @@ def get_algorithm_comparison_metrics(df: pd.DataFrame, k: int = 4) -> dict:
     return comparison
 
 
-def run_kmeans(df: pd.DataFrame, k: int = 4) -> tuple[pd.DataFrame, dict]:
+def run_kmeans(df: pd.DataFrame, k: int = 6) -> tuple[pd.DataFrame, dict]:
     """Backward compatibility wrapper for standard K-Means."""
     return run_unsupervised_algorithm(df, "K-Means Standard", k)
 

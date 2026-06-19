@@ -6,7 +6,7 @@ Exploratory Data Analysis — Visualizes dataset characteristics and feature dis
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from utils.data_loader import load_clean_data, load_anomalous_data, get_feature_columns, FEATURE_LABELS
+from utils.data_loader import load_clean_data, get_feature_columns, FEATURE_LABELS
 from utils.visualizer import (
     plot_rfm_distribution,
     plot_extended_features,
@@ -28,7 +28,7 @@ def show_eda():
 
     # ── Load Data ─────────────────────────────────────────────────────────────────
     df = load_clean_data()
-    df_anomaly = load_anomalous_data()
+    df_anomaly = pd.DataFrame()
     features = get_feature_columns()
 
     # ── Header ────────────────────────────────────────────────────────────────────

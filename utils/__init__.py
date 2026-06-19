@@ -1,4 +1,4 @@
-from utils.data_loader import load_clean_data, load_anomalous_data, get_feature_columns
+from utils.data_loader import load_clean_data, get_feature_columns
 from utils.visualizer import (
     plot_rfm_distribution,
     plot_scatter_3d,
@@ -17,7 +17,6 @@ from utils.mock_models import (
 
 __all__ = [
     "load_clean_data",
-    "load_anomalous_data",
     "get_feature_columns",
     "plot_rfm_distribution",
     "plot_scatter_3d",

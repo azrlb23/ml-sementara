@@ -144,4 +144,5 @@ Thumbs.db
 
 # Project-specific ignores
 temp_repo/
+temp_repo_new/
 .gemini/
