@@ -5,6 +5,7 @@ Arsitektur Single-Page Application (SPA)
 """
 
 import streamlit as st
+import pandas as pd
 from utils.data_loader import load_clean_data, get_summary_stats
 
 # ── Page Config ───────────────────────────────────────────────────────────────
@@ -68,7 +69,6 @@ with st.sidebar:
 def show_home():
     # ── Load Data ─────────────────────────────────────────────────────────────────
     df = load_clean_data()
-    df_anomaly = pd.DataFrame()
     stats = get_summary_stats(df)
 
     # ── Hero Banner ───────────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ def show_home():
             <p>Customer Segmentation in Digital Marketing — ML Final Project (Kelompok 6)</p>
         </div>
         <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--color-graphite); font-family: var(--font-geist-mono); font-size: 12px; font-weight: 500; color: var(--color-steel); letter-spacing: 0.02em;">
-            HYBRID STRATEGY: DBSCAN NOISE ISOLATION ➜ METAHEURISTICS CENTROID OPTIMIZATION ➜ SUPERVISED CLASSIFICATION
+            PIPELINE FLOW: METAHEURISTICS CENTROID OPTIMIZATION ➜ SUPERVISED CLASSIFICATION
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -88,7 +88,7 @@ def show_home():
     st.markdown('<div class="sl">Dataset Overview</div>', unsafe_allow_html=True)
 
     metrics_display = [
-        ("Total Inliers", f"{stats['total_customers']:,}", "Active clusterable customers", True),
+        ("Total Customers", f"{stats['total_customers']:,}", "Active customer records", True),
         ("Avg Recency", f"{stats['avg_recency']:.1f} days", "Since last purchase", False),
         ("Avg Frequency", f"{stats['avg_frequency']:.1f}x", "Transactions per customer", False),
         ("Avg Monetary", f"£{stats['avg_monetary']:,.1f}", "Spend per customer", False),
@@ -111,9 +111,9 @@ def show_home():
 
     pipeline_steps = [
         ("01", "EDA", "Understand distributions, skewness, and inter-feature correlations.", "var(--color-steel)", "Completed"),
-        ("02", "Preprocessing", "RFM++ engineering, DBSCAN noise isolation, and Standard Scaling.", "var(--color-ash)", "Completed"),
+        ("02", "Preprocessing", "RFM++ engineering and Z-Score Normalization.", "var(--color-ash)", "Completed"),
         ("03", "Unsupervised", "K-Means centroid optimization using Adaptive Q-Learning DE.", "var(--color-periwinkle-annotation)", "Completed"),
-        ("04", "Supervised", "Classifier training (Random Forest) for real-time customer predictions.", "var(--color-paper)", "Completed"),
+        ("04", "Supervised", "Classifier training (Decision Tree & SVM) for real-time customer predictions.", "var(--color-paper)", "Completed"),
     ]
 
     pipeline_html = '<div class="metric-grid cols-4">'
@@ -129,36 +129,16 @@ def show_home():
 
     # ── Dataset Preview ───────────────────────────────────────────────────────────
     st.markdown("---")
-    col_left, col_right = st.columns([3, 2])
-
-    with col_left:
-        st.markdown('<div class="sl">Cleaned Customer Features (Inliers)</div>', unsafe_allow_html=True)
-        st.dataframe(
-            df.head(10).style.format({
-                "Monetary": "£{:,.2f}",
-                "AvgSpending": "£{:.2f}",
-                "AvgMonthlySpending": "£{:.2f}",
-            }),
-            use_container_width=True,
-            height=320,
-        )
-
-    with col_right:
-        st.markdown('<div class="sl">Anomaly Isolated Customers</div>', unsafe_allow_html=True)
-        if not df_anomaly.empty:
-            st.markdown(f"""
-            <div class="success-banner" style="margin-bottom: 12px;">
-                <b style="color:var(--color-periwinkle-annotation)">{len(df_anomaly)} anomalous customers</b> were isolated by <b>DBSCAN</b> before clustering. 
-                These represent outlier VIP or wholesale accounts whose extreme monetary/frequency volumes would distort standard cluster centroids.
-            </div>
-            """, unsafe_allow_html=True)
-            st.dataframe(
-                df_anomaly[["CustomerID", "Recency", "Frequency", "Monetary", "CancelFrequency"]].head(8),
-                use_container_width=True,
-                height=200,
-            )
-        else:
-            st.info("Anomaly dataset not loaded.")
+    st.markdown('<div class="sl">Customer Features Preview (Var 1 — Var 11)</div>', unsafe_allow_html=True)
+    st.dataframe(
+        df.head(15).style.format({
+            "Monetary": "£{:,.2f}",
+            "AvgSpending": "£{:.2f}",
+            "AvgMonthlySpending": "£{:.2f}",
+        }),
+        use_container_width=True,
+        height=380,
+    )
 
     # ── Footer ─────────────────────────────────────────────────────────────────────
     st.markdown("---")

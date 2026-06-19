@@ -12,7 +12,6 @@ from utils.visualizer import (
 from utils.mock_models import (
     run_unsupervised_algorithm,
     get_convergence_curves,
-    run_logistic_regression,
 )
 
 __all__ = [
@@ -28,5 +27,4 @@ __all__ = [
     "CLUSTER_COLORS",
     "run_unsupervised_algorithm",
     "get_convergence_curves",
-    "run_logistic_regression",
 ]

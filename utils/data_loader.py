@@ -16,6 +16,7 @@ LABELED_DIR = Path(__file__).parent.parent / "data" / "Labeled"
 RAW_CSV = DATA_DIR / "customer_features_raw.csv"
 SCALED_CSV = DATA_DIR / "customer_features_scaled.csv"
 PCA_CSV = DATA_DIR / "customer_features_pca.csv"
+ANOMALY_CSV = DATA_DIR / "anomalous_customers.csv"
 
 # Mapping from Var name to friendly name
 COLUMN_MAPPING = {
@@ -121,6 +122,22 @@ def load_labeled_qlde_data() -> pd.DataFrame:
     df["CustomerID"] = df["CustomerID"].astype(int)
     df = df.rename(columns=COLUMN_MAPPING)
     return df
+
+
+@st.cache_data(show_spinner="Loading anomalous customer features...")
+def load_anomaly_data() -> pd.DataFrame:
+    """Load the anomalous customer dataset if it exists."""
+    if not ANOMALY_CSV.exists():
+        return pd.DataFrame()
+    try:
+        df = pd.read_csv(ANOMALY_CSV)
+        if "CustomerID" in df.columns:
+            df["CustomerID"] = df["CustomerID"].astype(int)
+        df = df.rename(columns=COLUMN_MAPPING)
+        return df
+    except Exception:
+        return pd.DataFrame()
+
 
 
 def get_feature_columns() -> list[str]:

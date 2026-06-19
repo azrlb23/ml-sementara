@@ -28,6 +28,7 @@ from pathlib import Path
 import joblib
 
 MODELS_DIR = Path(__file__).parent.parent / "models"
+LABELED_DIR = Path(__file__).parent.parent / "data" / "Labeled"
 FEATURE_COLUMNS = [
     "Recency",
     "Frequency",
@@ -184,6 +185,15 @@ def get_cluster_profiles(df_clustered: pd.DataFrame, cluster_col: str = "Cluster
 
 # ── Supervised Algorithms (Classification) ───────────────────────────────────
 
+# Mapping of all 5 clustering datasets as defined in the repository
+FILE_DATASETS = {
+    'QLDE (Paper)': LABELED_DIR / 'hasildata_kmeans-qlde.csv',
+    'STANDARD (Baseline)': LABELED_DIR / 'hasildata_kmeans-standard.csv',
+    'DE': LABELED_DIR / 'hasildata_kmeans-de.csv',
+    'PSO': LABELED_DIR / 'hasildata_kmeans-pso.csv',
+    'EOA': LABELED_DIR / 'hasildata_kmeans-eoa.csv'
+}
+
 def _prep_classification_data(df_clustered: pd.DataFrame, cluster_col: str = "Cluster"):
     valid = df_clustered[df_clustered[cluster_col] != -1].copy()
     X = valid[FEATURE_COLUMNS].values
@@ -207,85 +217,108 @@ def _compute_metrics(y_true, y_pred) -> dict:
     }
 
 
-@st.cache_data(show_spinner="Training Logistic Regression...")
-def run_logistic_regression(df_clustered: pd.DataFrame) -> tuple[dict, dict]:
-    """Logistic Regression classifier (baseline)."""
-    X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    model = LogisticRegression(max_iter=500, random_state=42)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-
-    metrics = _compute_metrics(y_test, y_pred)
-    importances = np.mean(np.abs(model.coef_), axis=0)
-    if np.sum(importances) > 0:
-        importances /= np.sum(importances)
-    importance_dict = dict(zip(FEATURE_COLUMNS, importances.round(4).tolist()))
-    return metrics, importance_dict
-
-
 @st.cache_data(show_spinner="Training Decision Tree...")
-def run_decision_tree(df_clustered: pd.DataFrame) -> tuple[dict, dict]:
-    """Decision Tree classifier."""
+def run_decision_tree(df_clustered: pd.DataFrame) -> tuple[dict, dict, DecisionTreeClassifier]:
+    """Decision Tree classifier (unscaled features, max_depth=4)."""
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
 
-    model = DecisionTreeClassifier(max_depth=6, random_state=42)
+    # Decision tree does not require scaling (matching 04.1_classification_decision_tree.py)
+    model = DecisionTreeClassifier(max_depth=4, random_state=42)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
 
     metrics = _compute_metrics(y_test, y_pred)
     importance = dict(zip(FEATURE_COLUMNS, model.feature_importances_.round(4).tolist()))
-    return metrics, importance
-
-
-@st.cache_data(show_spinner="Training Random Forest...")
-def run_random_forest(df_clustered: pd.DataFrame) -> tuple[dict, dict]:
-    """Random Forest classifier."""
-    X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
-    scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
-
-    model = RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42, n_jobs=-1)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-
-    metrics = _compute_metrics(y_test, y_pred)
-    importance = dict(zip(FEATURE_COLUMNS, model.feature_importances_.round(4).tolist()))
-    return metrics, importance
+    return metrics, importance, model
 
 
 @st.cache_data(show_spinner="Training SVM...")
-def run_svm(df_clustered: pd.DataFrame) -> tuple[dict, dict]:
-    """Support Vector Machine (SVM) classifier."""
+def run_svm(df_clustered: pd.DataFrame) -> tuple[dict, dict, SVC, StandardScaler]:
+    """Support Vector Machine (SVM) classifier (Z-score scaled, class_weight='balanced')."""
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
+    
+    # Scale features
     scaler = StandardScaler()
-    X_train = scaler.fit_transform(X_train)
-    X_test = scaler.transform(X_test)
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
-    # Limit training data to 2000 samples to keep training fast, matching the notebook
-    X_train_svm = X_train[:2000]
+    # Limit training data to 2000 samples to keep training fast, matching the notebooks
+    X_train_svm = X_train_scaled[:2000]
     y_train_svm = y_train[:2000]
 
-    model = SVC(kernel='rbf', probability=True, random_state=42)
+    model = SVC(kernel='rbf', probability=True, random_state=42, class_weight='balanced')
     model.fit(X_train_svm, y_train_svm)
-    y_pred = model.predict(X_test)
+    y_pred = model.predict(X_test_scaled)
 
     metrics = _compute_metrics(y_test, y_pred)
     
     # Permutation importance for SVM feature importance
-    perm_importance = permutation_importance(model, X_test, y_test, random_state=42, n_repeats=5)
+    perm_importance = permutation_importance(model, X_test_scaled, y_test, random_state=42, n_repeats=5)
     importances = np.abs(perm_importance.importances_mean)
     if np.sum(importances) > 0:
         importances /= np.sum(importances)
     importance_dict = dict(zip(FEATURE_COLUMNS, importances.round(4).tolist()))
-    return metrics, importance_dict
+    return metrics, importance_dict, model, scaler
+
+
+@st.cache_data(show_spinner="Running cross-dataset classification comparison...")
+def run_cross_dataset_comparison() -> pd.DataFrame:
+    """Replicates 04.5_classification_comparison.py across all 5 clustering datasets."""
+    import time
+    from sklearn.model_selection import cross_val_score
+    
+    tabel_hasil = []
+    
+    for nama_metode, filepath in FILE_DATASETS.items():
+        if not filepath.exists():
+            continue
+            
+        df = pd.read_csv(filepath)
+        fitur = [f'Var{i}' for i in range(1, 12)]
+        X = df[fitur].values
+        y = df['Cluster'].values
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Decision Tree (depth=4)
+        model_dt = DecisionTreeClassifier(random_state=42, max_depth=4)
+        mulai_dt = time.time()
+        val_acc_dt = cross_val_score(model_dt, X_train, y_train, cv=5).mean() * 100
+        model_dt.fit(X_train, y_train)
+        test_acc_dt = accuracy_score(y_test, model_dt.predict(X_test)) * 100
+        selesai_dt = time.time()
+        
+        tabel_hasil.append({
+            'Dataset': nama_metode,
+            'Method': 'Decision Tree (DT)',
+            'Validation Mean Accuracy (%)': round(val_acc_dt, 2),
+            'Test Set Accuracy (%)': round(test_acc_dt, 2),
+            'Time(second)': round(selesai_dt - mulai_dt, 4)
+        })
+        
+        # Kernel SVM
+        X_train_svm, y_train_svm = X_train[:2000], y_train[:2000]
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train_svm)
+        X_test_scaled = scaler.transform(X_test)
+        
+        model_svm = SVC(kernel='rbf', random_state=42, class_weight='balanced')
+        mulai_svm = time.time()
+        val_acc_svm = cross_val_score(model_svm, X_train_scaled, y_train_svm, cv=5).mean() * 100
+        model_svm.fit(X_train_scaled, y_train_svm)
+        test_acc_svm = accuracy_score(y_test, model_svm.predict(X_test_scaled)) * 100
+        selesai_svm = time.time()
+        
+        tabel_hasil.append({
+            'Dataset': nama_metode,
+            'Method': 'Kernel SVM (KSVM)',
+            'Validation Mean Accuracy (%)': round(val_acc_svm, 2),
+            'Test Set Accuracy (%)': round(test_acc_svm, 2),
+            'Time(second)': round(selesai_svm - mulai_svm, 4)
+        })
+        
+    return pd.DataFrame(tabel_hasil)
+
 
 
 def load_model_if_exists(filename: str):

@@ -1,6 +1,6 @@
-# 🧬 SegmentIQ — Customer Segmentation Dashboard
+# SegmentIQ - Customer Segmentation Dashboard
 
-> **Machine Learning Final Project — Kelompok 6**  
+> **Machine Learning Final Project - Kelompok 6**  
 > Customer Segmentation in Digital Marketing menggunakan pendekatan Hybrid ML (Unsupervised + Supervised Learning)
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue?logo=python&logoColor=white)
@@ -11,68 +11,68 @@
 
 ---
 
-## 📌 Deskripsi Proyek
+## Deskripsi Proyek
 
-**SegmentIQ** adalah aplikasi web interaktif berbasis [Streamlit](https://streamlit.io) yang mengimplementasikan pipeline Machine Learning end-to-end untuk melakukan **segmentasi pelanggan (customer segmentation)** pada data transaksi e-commerce. Proyek ini dirancang sebagai tugas akhir mata kuliah Machine Learning.
+SegmentIQ adalah aplikasi web interaktif berbasis Streamlit yang mengimplementasikan pipeline Machine Learning end-to-end untuk melakukan segmentasi pelanggan (customer segmentation) pada data transaksi e-commerce. Proyek ini dirancang sebagai tugas akhir mata kuliah Machine Learning.
 
 Pipeline utama menggabungkan dua pendekatan ML:
-1. **Unsupervised Learning** — DBSCAN untuk deteksi outlier, lalu K-Means / Hierarchical / GMM untuk clustering
-2. **Supervised Learning** — Decision Tree, Random Forest, dan SVM untuk klasifikasi segmen secara real-time
+1. **Unsupervised Learning**: Perbandingan 5 algoritma clustering (K-Means Standard, K-Means + DE, K-Means + PSO, K-Means + EOA, K-Means QLDE) dengan jumlah cluster K=6.
+2. **Supervised Learning**: Decision Tree dan SVM untuk klasifikasi segmen pelanggan.
 
 ---
 
-## 🎯 Fitur Utama
+## Fitur Utama
 
 | Halaman | Deskripsi |
 |---------|-----------|
-| 🏠 **Home** | Dashboard ringkasan: KPI metrik, pipeline overview, data preview, anomaly summary |
-| 📊 **EDA** | Exploratory Data Analysis interaktif: distribusi RFM, extended features, heatmap korelasi, box plot |
-| 🔵 **Clustering** | Perbandingan 4 algoritma clustering (K-Means, Hierarchical, GMM, DBSCAN) dengan visualisasi 3D/2D, radar chart |
-| 🌲 **Classification** | Perbandingan classifier (Decision Tree, Random Forest, SVM) dengan feature importance dan metrik evaluasi |
-| 🎯 **Predict** | Prediksi segmen pelanggan secara real-time + batch prediction via upload CSV |
+| Home | Dashboard ringkasan: KPI metrik, pipeline overview, dan data preview |
+| EDA | Exploratory Data Analysis interaktif: distribusi RFM, extended features, heatmap korelasi, dan box plot |
+| Preprocessing | Langkah pemrosesan data: standardisasi fitur, analisis varians PCA, loading matriks, dan visualisasi komponen utama |
+| Unsupervised | Perbandingan 5 algoritma clustering dengan visualisasi scatter 3D/2D, donut chart, radar chart, kurva konvergensi, dan perbandingan metrik evaluasi |
+| Supervised | Pelatihan klasifikasi dinamis (Decision Tree dan SVM) dengan feature importance, visualisasi rules, dan tabel perbandingan performa |
+| About | Informasi tim pengembang, metadata proyek, dan referensi paper |
 
 ---
 
-## 🏗️ Struktur Proyek
+## Struktur Proyek
 
 ```
 segmentation-web/
 │
-├── app.py                         # 🏠 Halaman utama (Home Dashboard)
+├── app.py                         # Halaman utama (Home Dashboard)
 │
-├── pages/
-│   ├── 01_📊_EDA.py               # Exploratory Data Analysis
-│   ├── 02_🔵_Clustering.py        # Unsupervised Learning
-│   ├── 03_🌲_Classification.py    # Supervised Learning
-│   └── 04_🎯_Predict.py           # Real-time Prediction
+├── views/
+│   ├── eda.py                     # Exploratory Data Analysis
+│   ├── preprocessing.py           # Preprocessing & PCA Analysis
+│   ├── unsupervised_learning.py   # Unsupervised Learning (Clustering)
+│   ├── supervised_learning.py     # Supervised Learning (Classification)
+│   └── about.py                   # About & Team Metadata
 │
 ├── utils/
 │   ├── __init__.py
 │   ├── data_loader.py             # Data loading & caching utilities
-│   ├── mock_models.py             # ML model implementations (clustering & classification)
-│   └── visualizer.py             # Plotly chart generators
+│   ├── mock_models.py             # ML model training and evaluation
+│   ├── visualizer.py             # Plotly chart generators
+│   └── algorithms.py             # Evolutionary clustering algorithms
 │
 ├── data/
-│   └── processed/
-│       ├── clean_customer_features.csv    # ← Output Anggota 1 (wajib ada)
-│       └── anomalous_customers.csv        # ← Output DBSCAN noise detection
-│
-├── models/                        # Direktori untuk file .pkl model terlatih
-│   └── .gitkeep
-│
-├── .streamlit/
-│   └── config.toml               # Konfigurasi tema Streamlit
+│   ├── processed/
+│   │   ├── customer_features_raw.csv
+│   │   ├── customer_features_scaled.csv
+│   │   └── customer_features_pca.csv
+│   └── Labeled/
+│       └── hasildata_*.csv
 │
 └── requirements.txt              # Python dependencies
 ```
 
 ---
 
-## ⚙️ Instalasi & Menjalankan Aplikasi
+## Instalasi dan Menjalankan Aplikasi
 
 ### Prasyarat
 
-- Python **3.10+**
+- Python 3.10+
 - pip atau conda
 
 ### 1. Clone Repository
@@ -103,26 +103,14 @@ pip install -r requirements.txt
 
 ### 4. Siapkan Data
 
-Letakkan file CSV hasil preprocessing ke dalam folder `data/processed/`:
+Letakkan file CSV data ke dalam folder `data/processed/` dan `data/Labeled/`:
 
 ```
 data/processed/
-├── clean_customer_features.csv     # Wajib
-└── anomalous_customers.csv         # Opsional
+├── customer_features_raw.csv
+├── customer_features_scaled.csv
+└── customer_features_pca.csv
 ```
-
-**Format `clean_customer_features.csv`** (kolom yang diperlukan):
-
-| Kolom | Tipe | Deskripsi |
-|-------|------|-----------|
-| `CustomerID` | int | ID unik pelanggan |
-| `Recency` | float | Hari sejak pembelian terakhir |
-| `Frequency` | float | Jumlah transaksi |
-| `Monetary` | float | Total pengeluaran (£) |
-| `AvgSpending` | float | Rata-rata pengeluaran per item (£) |
-| `UniqueProducts` | float | Jumlah produk unik yang dibeli |
-| `CancelFrequency` | float | Jumlah pembatalan transaksi |
-| `AvgMonthlySpending` | float | Rata-rata pengeluaran per bulan (£) |
 
 ### 5. Jalankan Aplikasi
 
@@ -134,7 +122,7 @@ Aplikasi akan terbuka di browser: **http://localhost:8501**
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ```
 streamlit>=1.32.0
@@ -151,104 +139,72 @@ scipy>=1.11.0
 
 ---
 
-## 🔬 Pipeline Machine Learning
+## Pipeline Machine Learning
 
 ```
 Raw Data (UCI Online Retail)
         │
         ▼
 ┌─────────────────────────┐
-│  Data Cleaning           │  → Remove nulls, negatives, cancelled invoices
-│  (Anggota 1)            │
+│  Data Cleaning          │  -> Menghapus nulls, nilai negatif, dan transaksi dibatalkan
 └────────────┬────────────┘
              │
              ▼
 ┌─────────────────────────┐
-│  Feature Engineering    │  → RFM + AvgSpending + UniqueProducts +
-│  (Anggota 1)            │    CancelFrequency + AvgMonthlySpending
+│  Feature Engineering    │  -> RFM + AvgSpending + UniqueProducts +
+└────────────┬────────────┘     CancelFrequency + AvgMonthlySpending
+             │
+             ▼
+┌─────────────────────────┐
+│  Standardization & PCA  │  -> Z-score scaling + reduksi dimensi (6 komponen utama)
 └────────────┬────────────┘
              │
              ▼
 ┌─────────────────────────┐
-│  DBSCAN Noise Filter    │  → Isolasi outlier ekstrem → anomalous_customers.csv
-│  (Anggota 2)            │
-└────────────┬────────────┘
+│  Clustering (K=6)       │  -> Centroid optimasi (K-Means, DE, PSO, EOA, QLDE)
+└────────────┬────────────┘  -> Metrik: SSE, Silhouette, Davies-Bouldin, Calinski-Harabasz
              │
              ▼
 ┌─────────────────────────┐
-│  Clustering             │  → K-Means ✦ Hierarchical ✦ GMM
-│  (Anggota 2)            │  → Evaluasi: Silhouette Score, Inertia, BIC/AIC
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  Classification         │  → Decision Tree ✦ Random Forest ✦ SVM
-│  (Anggota 3)            │  → Label: hasil K-Means (k=4)
-└────────────┬────────────┘
-             │
-             ▼
-┌─────────────────────────┐
-│  Real-time Prediction   │  → Input → StandardScaler → RandomForest → Segmen
-│  (Halaman Predict)      │
-└─────────────────────────┘
+│  Classification         │  -> Klasifikasi segmen pelanggan (Decision Tree & SVM)
+└─────────────────────────┘  -> Pelatihan dinamis menggunakan target label clustering
 ```
 
 ---
 
-## 🏷️ Segmen Pelanggan
+## Segmen Pelanggan
 
-| Segmen | Deskripsi | Strategi |
-|--------|-----------|----------|
-| 🏆 **Champion** | Pelanggan paling aktif, belanja besar & sering | Reward eksklusif, early access produk baru |
-| 💎 **Loyal** | Sering belanja, nilainya stabil tinggi | Upsell premium bundle & langganan |
-| ⚠️ **At-Risk** | Mulai jarang belanja, butuh perhatian | Win-back campaign dengan diskon personal |
-| 🌱 **New/Inactive** | Baru bergabung atau sudah lama tidak aktif | Welcome series, starter bundle |
-
----
-
-## 👥 Tim Pengembang — Kelompok 6
-
-| Anggota | Peran | Tanggung Jawab |
-|---------|-------|----------------|
-| **Anggota 1** | Data Engineer | Data cleaning, feature engineering (RFM), preprocessing |
-| **Anggota 2** | Unsupervised Learning Specialist | DBSCAN noise filter, K-Means, Hierarchical, GMM clustering |
-| **Anggota 3** | Supervised Learning Specialist | Decision Tree, Random Forest, SVM classification |
+| ID | Segmen | Karakteristik | Strategi |
+|----|--------|---------------|----------|
+| 0 | High-Value (VIP) | Recency rendah, Frequency tinggi, Monetary tinggi | Program loyalitas eksklusif dan early access produk baru |
+| 1 | Price-Sensitive | Volume pembelian tinggi, frequency & spending rendah | Promo diskon dan bundle harga terjangkau |
+| 2 | High-Expectation (UK) | Mayoritas dari UK, cancellation sedang | Peningkatan kualitas layanan dan informasi produk |
+| 3 | Uncertain Buyer | Cancellation tinggi, berasal dari non-UK | Optimasi checkout flow dan keamanan transaksi |
+| 4 | Cautious Consumer | Recency tinggi, frekuensi rendah | Re-engagement campaign dan diskon musiman |
+| 5 | Balanced Customer | Kinerja seimbang pada seluruh fitur | Kampanye pemasaran terdiversifikasi |
 
 ---
 
-## 📊 Dataset
+## Tim Pengembang - Kelompok 6
 
-- **Sumber**: [UCI Machine Learning Repository — Online Retail Dataset](https://archive.ics.uci.edu/ml/datasets/Online+Retail)
+- **Ibnu Dwiki Hermawan** (EDA & Preprocessing)
+- **Naufal Rifqi Rahman** (Unsupervised Learning)
+- **Muhammad Farel Alkayis** (Supervised Learning)
+- **Mochammad Azriel Albian Putra** (Website Implementation)
+
+---
+
+## Dataset
+
+- **Sumber**: [UCI Machine Learning Repository - Online Retail Dataset](https://archive.ics.uci.edu/ml/datasets/Online+Retail)
 - **Cakupan**: Transaksi e-commerce dari perusahaan berbasis di UK
-- **Periode**: 01 Desember 2010 — 09 Desember 2011
+- **Periode**: 01 Desember 2010 - 09 Desember 2011
 - **Ukuran awal**: ~541.909 baris transaksi
-- **Mata uang**: GBP (£ Pound Sterling)
+- **Mata uang**: GBP (Pound Sterling)
 
 ---
 
-## 🛠️ Menambahkan Model .pkl Terlatih
-
-Ketika model dari Anggota 2 & 3 sudah tersedia dalam format `.pkl`, letakkan di folder `models/` dan perbarui fungsi `load_model_if_exists()` di `utils/mock_models.py`:
-
-```python
-# Contoh penggunaan
-from utils.mock_models import load_model_if_exists
-
-kmeans_model = load_model_if_exists("kmeans_k4.pkl")
-rf_model     = load_model_if_exists("random_forest.pkl")
-```
-
----
-
-## 📝 Catatan Pengembangan
-
-- Aplikasi saat ini menggunakan **implementasi langsung scikit-learn** (bukan file `.pkl` yang telah disimpan) karena model dari Anggota 2 & 3 masih dalam tahap pengembangan.
-- Seluruh komputasi model menggunakan `@st.cache_data` untuk performa optimal.
-- Tema glassmorphism dark mode menggunakan custom CSS dengan font Inter dari Google Fonts.
-
----
-
-## 📄 Lisensi
+## Lisensi
 
 Proyek ini dibuat untuk keperluan akademis. Silakan gunakan dan modifikasi sesuai kebutuhan.
 

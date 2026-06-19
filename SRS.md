@@ -1,30 +1,30 @@
 # Software Requirements Specification (SRS)
 
-## SegmentIQ — Customer Segmentation Dashboard
+## SegmentIQ - Customer Segmentation Dashboard
 
 ---
 
 | Atribut | Detail |
 |---------|--------|
-| **Nama Proyek** | SegmentIQ — Customer Segmentation in Digital Marketing |
+| **Nama Proyek** | SegmentIQ - Customer Segmentation in Digital Marketing |
 | **Versi Dokumen** | 1.0 |
 | **Tanggal** | Juni 2026 |
-| **Tim** | Kelompok 6 — ML Final Project |
-| **Status** | Draft |
+| **Tim** | Kelompok 6 - ML Final Project |
+| **Status** | Final |
 
 ---
 
 ## Daftar Isi
 
-1. [Pendahuluan](#1-pendahuluan)
-2. [Deskripsi Umum](#2-deskripsi-umum)
-3. [Kebutuhan Fungsional](#3-kebutuhan-fungsional)
-4. [Kebutuhan Non-Fungsional](#4-kebutuhan-non-fungsional)
-5. [Arsitektur Sistem](#5-arsitektur-sistem)
-6. [Model Machine Learning](#6-model-machine-learning)
-7. [Kebutuhan Data](#7-kebutuhan-data)
-8. [Antarmuka Sistem](#8-antarmuka-sistem)
-9. [Batasan & Asumsi](#9-batasan--asumsi)
+1. Pendahuluan
+2. Deskripsi Umum
+3. Kebutuhan Fungsional
+4. Kebutuhan Non-Fungsional
+5. Arsitektur Sistem
+6. Model Machine Learning
+7. Kebutuhan Data
+8. Antarmuka Sistem
+9. Batasan dan Asumsi
 
 ---
 
@@ -32,27 +32,30 @@
 
 ### 1.1 Tujuan Dokumen
 
-Dokumen ini mendefinisikan kebutuhan perangkat lunak untuk aplikasi web **SegmentIQ**, sebuah dashboard interaktif yang mengimplementasikan pipeline Machine Learning end-to-end untuk segmentasi pelanggan di bidang pemasaran digital.
+Dokumen ini mendefinisikan kebutuhan perangkat lunak untuk aplikasi web SegmentIQ, sebuah dashboard interaktif yang mengimplementasikan pipeline Machine Learning end-to-end untuk segmentasi pelanggan di bidang pemasaran digital.
 
 ### 1.2 Ruang Lingkup
 
 Sistem ini mencakup:
 - Visualisasi interaktif hasil Exploratory Data Analysis (EDA)
-- Eksekusi dan perbandingan algoritma clustering (unsupervised learning)
-- Eksekusi dan perbandingan algoritma klasifikasi (supervised learning)
-- Prediksi segmen pelanggan secara real-time (single & batch)
+- Penjelasan langkah preprocessing data termasuk Standard Scaling dan Principal Component Analysis (PCA)
+- Perbandingan 5 algoritma clustering (unsupervised learning) dengan jumlah cluster K=6
+- Pelatihan dan perbandingan 2 algoritma klasifikasi (supervised learning) menggunakan data dari 5 sumber label hasil clustering
 
-### 1.3 Definisi & Singkatan
+### 1.3 Definisi dan Singkatan
 
 | Singkatan | Kepanjangan |
 |-----------|-------------|
 | RFM | Recency, Frequency, Monetary |
 | EDA | Exploratory Data Analysis |
-| DBSCAN | Density-Based Spatial Clustering of Applications with Noise |
-| GMM | Gaussian Mixture Model |
+| PCA | Principal Component Analysis |
 | SVM | Support Vector Machine |
+| DT | Decision Tree |
+| DE | Differential Evolution |
+| PSO | Particle Swarm Optimization |
+| EOA | Evolutionary Optimization Algorithm |
+| QLDE | Q-Learning Differential Evolution |
 | KPI | Key Performance Indicator |
-| LTV | Lifetime Value |
 | UCI | UC Irvine Machine Learning Repository |
 
 ### 1.4 Referensi
@@ -67,20 +70,19 @@ Sistem ini mencakup:
 
 ### 2.1 Perspektif Produk
 
-SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (standalone). Aplikasi ini mengolah data pelanggan yang telah diproses oleh tim Data Engineer, kemudian menampilkan hasil clustering dan klasifikasi dalam bentuk visualisasi interaktif.
+SegmentIQ adalah aplikasi web berbasis Streamlit yang berdiri sendiri (standalone). Aplikasi ini mengolah data pelanggan yang telah diproses oleh tim Data Engineer, kemudian menampilkan hasil clustering dan klasifikasi dalam bentuk visualisasi interaktif.
 
 ```
-[Data Engineer Output] → [SegmentIQ Web App] → [Business Insights]
-    (CSV Files)              (Streamlit)          (Segment Strategy)
+[Data Preprocessing Output] -> [SegmentIQ Web App] -> [Business Insights]
+      (CSV Files)                 (Streamlit)          (Segment Strategy)
 ```
 
 ### 2.2 Fungsi Utama Produk
 
-1. **Visualisasi EDA** — Menampilkan distribusi fitur RFM dan extended features secara interaktif
-2. **Clustering Interaktif** — Menjalankan dan membandingkan 4 algoritma clustering
-3. **Klasifikasi Interaktif** — Menjalankan dan membandingkan 3 algoritma klasifikasi
-4. **Prediksi Real-time** — Memprediksi segmen pelanggan baru berdasarkan input manual
-5. **Batch Prediction** — Memprediksi segmen untuk banyak pelanggan sekaligus via upload CSV
+1. **Visualisasi EDA**: Menampilkan distribusi fitur RFM dan extended features secara interaktif.
+2. **Visualisasi Preprocessing**: Menampilkan langkah standardisasi fitur, analisis rasio varians PCA, matriks loading komponen, dan proyeksi komponen utama.
+3. **Clustering Interaktif**: Menjalankan dan membandingkan 5 algoritma clustering dengan jumlah cluster K=6 yang terkunci.
+4. **Klasifikasi Interaktif**: Menjalankan dan membandingkan 2 algoritma klasifikasi dengan pilihan 5 target label sumber.
 
 ### 2.3 Karakteristik Pengguna
 
@@ -93,9 +95,9 @@ SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (stand
 
 ### 2.4 Batasan Umum
 
-- Aplikasi berjalan secara lokal melalui browser
-- Membutuhkan file CSV input dari tim preprocessing
-- Tidak memiliki sistem autentikasi atau database eksternal
+- Aplikasi berjalan secara lokal melalui browser.
+- Membutuhkan file CSV input dari tim preprocessing.
+- Tidak memiliki sistem autentikasi atau database eksternal.
 
 ---
 
@@ -106,68 +108,53 @@ SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (stand
 | ID | Kebutuhan | Prioritas |
 |----|-----------|-----------|
 | F-01 | Sistem menampilkan 5 KPI cards: Total Customers, Avg Recency, Avg Frequency, Avg Monetary, Cancel Rate | Tinggi |
-| F-02 | Sistem menampilkan 4-tahap pipeline overview (Data Cleaning, Feature Engineering, Clustering, Classification) dengan status | Tinggi |
-| F-03 | Sistem menampilkan preview 10 baris data pelanggan dengan format mata uang GBP | Sedang |
-| F-04 | Sistem menampilkan ringkasan anomaly customers yang diisolasi oleh DBSCAN | Sedang |
-| F-05 | Sidebar menampilkan navigasi ke seluruh halaman | Tinggi |
+| F-02 | Sistem menampilkan 4-tahap pipeline overview (EDA, Preprocessing, Unsupervised, Supervised) dengan status | Tinggi |
+| F-03 | Sistem menampilkan preview 15 baris data pelanggan dengan format mata uang GBP | Sedang |
+| F-04 | Sidebar menampilkan navigasi ke seluruh halaman | Tinggi |
 
-### 3.2 Modul EDA (pages/01_📊_EDA.py)
+### 3.2 Modul EDA (views/eda.py)
 
 | ID | Kebutuhan | Prioritas |
 |----|-----------|-----------|
-| F-10 | Sistem menampilkan statistik deskriptif (mean, std, min, max, quartile) untuk dataset bersih dan dataset anomali | Tinggi |
+| F-10 | Sistem menampilkan statistik deskriptif untuk dataset bersih pelanggan (4,335 records) | Tinggi |
 | F-11 | Sistem menampilkan histogram distribusi fitur RFM (Recency, Frequency, Monetary) | Tinggi |
-| F-12 | Sistem menampilkan distribusi 4 extended features (AvgSpending, UniqueProducts, CancelFrequency, AvgMonthlySpending) | Tinggi |
+| F-12 | Sistem menampilkan distribusi extended features (AvgSpending, UniqueProducts, CancelFrequency, AvgMonthlySpending) | Tinggi |
 | F-13 | Sistem menampilkan heatmap korelasi antar seluruh fitur | Sedang |
 | F-14 | Sistem menampilkan box plot untuk fitur yang dipilih pengguna | Rendah |
 | F-15 | Pengguna dapat mengaktifkan/menonaktifkan setiap seksi via sidebar checkbox | Sedang |
-| F-16 | Sistem menampilkan 3 metrik ringkasan: Median Recency, Median Frequency, Median Monetary | Sedang |
-| F-17 | Sistem menampilkan tabel dan kartu untuk top 5 pelanggan anomali berdasarkan Monetary | Sedang |
 
-### 3.3 Modul Clustering (pages/02_🔵_Clustering.py)
+### 3.3 Modul Preprocessing (views/preprocessing.py)
 
 | ID | Kebutuhan | Prioritas |
 |----|-----------|-----------|
-| F-20 | Pengguna dapat memilih algoritma clustering: K-Means, Hierarchical, GMM, atau DBSCAN | Tinggi |
-| F-21 | Pengguna dapat mengatur jumlah cluster (k) via slider untuk K-Means, Hierarchical, dan GMM | Tinggi |
-| F-22 | Pengguna dapat mengatur parameter DBSCAN (eps, min_samples) via slider | Tinggi |
-| F-23 | Sistem menampilkan scatter plot 3D menggunakan ruang RFM (Recency-Frequency-Monetary) | Tinggi |
-| F-24 | Sistem menampilkan scatter plot 2D dengan pilihan sumbu X dan Y yang dapat dikustomisasi | Sedang |
-| F-25 | Sistem menampilkan bar chart ukuran tiap cluster | Sedang |
-| F-26 | Sistem menampilkan radar chart profil cluster (setelah normalisasi MinMax) | Sedang |
-| F-27 | Sistem menampilkan deskripsi dan statistik untuk setiap cluster yang dihasilkan | Tinggi |
-| F-28 | Sistem menampilkan perbandingan Silhouette Score keempat algoritma secara bersamaan | Tinggi |
-| F-29 | Sistem menampilkan tabel ringkasan perbandingan algoritma (Silhouette, jumlah cluster, noise points) | Sedang |
-| F-30 | Sistem menampilkan metrik evaluasi: Silhouette Score, Inertia (K-Means), BIC/AIC (GMM) | Tinggi |
+| F-20 | Sistem menampilkan deskripsi formula standardisasi fitur (Z-score normalization) | Tinggi |
+| F-21 | Sistem menampilkan visualisasi rasio varians kumulatif PCA untuk menentukan jumlah komponen utama optimal | Tinggi |
+| F-22 | Sistem menampilkan heatmap matriks loading PCA untuk melihat kontribusi fitur terhadap masing-masing komponen utama | Tinggi |
+| F-23 | Sistem menampilkan visualisasi scatter plot proyeksi 2 dimensi komponen utama pertama (PC1) dan kedua (PC2) | Tinggi |
 
-### 3.4 Modul Classification (pages/03_🌲_Classification.py)
+### 3.4 Modul Clustering (views/unsupervised_learning.py)
 
 | ID | Kebutuhan | Prioritas |
 |----|-----------|-----------|
-| F-40 | Pengguna dapat memilih algoritma klasifikasi: Decision Tree, Random Forest, atau SVM | Tinggi |
-| F-41 | Sistem melatih classifier menggunakan label hasil K-Means (k=4) sebagai target | Tinggi |
-| F-42 | Sistem menampilkan 4 metrik evaluasi: Accuracy, F1 Score (macro), Precision, Recall | Tinggi |
-| F-43 | Sistem menampilkan bar chart feature importance untuk Decision Tree dan Random Forest | Sedang |
-| F-44 | Sistem menampilkan informasi bahwa SVM tidak mendukung feature importance langsung | Rendah |
-| F-45 | Sistem menampilkan perbandingan keempat metrik untuk ketiga classifier secara bersamaan | Tinggi |
-| F-46 | Sistem menampilkan tabel ringkasan perbandingan classifier dengan highlight nilai terbaik | Sedang |
-| F-47 | Sistem menampilkan notifikasi classifier terbaik berdasarkan accuracy | Sedang |
-| F-48 | Sistem menampilkan jumlah sampel training per segmen | Rendah |
+| F-30 | Pengguna dapat memilih algoritma clustering: K-Means Standard, K-Means + DE, K-Means + PSO, K-Means + EOA, atau K-Means QLDE | Tinggi |
+| F-31 | Sistem mengunci jumlah cluster K=6 berdasarkan analisis optimalitas elbow dan silhouette | Tinggi |
+| F-32 | Sistem menampilkan scatter plot 3D menggunakan ruang RFM (Recency-Frequency-Monetary) | Tinggi |
+| F-33 | Sistem menampilkan scatter plot 2D dengan pilihan sumbu X dan Y yang dapat dikustomisasi | Sedang |
+| F-34 | Sistem menampilkan donut chart proporsi ukuran tiap cluster | Sedang |
+| F-35 | Sistem menampilkan radar chart profil cluster (setelah normalisasi MinMax) | Sedang |
+| F-36 | Sistem menampilkan tabel profil dan deskripsi detail untuk setiap cluster yang dihasilkan | Tinggi |
+| F-37 | Sistem menampilkan visualisasi kurva konvergensi nilai SSE per iterasi optimasi centroid | Tinggi |
+| F-38 | Sistem menampilkan visualisasi perbandingan performa semua algoritma (SSE, Silhouette, Davies-Bouldin, Calinski-Harabasz) | Tinggi |
 
-### 3.5 Modul Predict (pages/04_🎯_Predict.py)
+### 3.5 Modul Classification (views/supervised_learning.py)
 
 | ID | Kebutuhan | Prioritas |
 |----|-----------|-----------|
-| F-50 | Pengguna dapat memasukkan 7 fitur pelanggan melalui form input (slider & number input) | Tinggi |
-| F-51 | Sistem memprediksi segmen pelanggan menggunakan Random Forest yang di-cache | Tinggi |
-| F-52 | Sistem menampilkan nama segmen dan confidence score hasil prediksi | Tinggi |
-| F-53 | Sistem menampilkan probability breakdown untuk semua segmen | Sedang |
-| F-54 | Sistem menampilkan progress bar probability untuk setiap segmen | Sedang |
-| F-55 | Sistem menampilkan rekomendasi strategi bisnis berdasarkan segmen yang diprediksi | Tinggi |
-| F-56 | Pengguna dapat mengupload file CSV untuk batch prediction | Sedang |
-| F-57 | Sistem memvalidasi kolom CSV yang diupload dan menampilkan error jika ada kolom yang hilang | Sedang |
-| F-58 | Sistem menampilkan hasil batch prediction dalam tabel dengan kolom PredictedCluster dan SegmentName | Sedang |
-| F-59 | Pengguna dapat mengunduh hasil batch prediction dalam format CSV | Rendah |
+| F-40 | Pengguna dapat melatih algoritma klasifikasi secara dinamis: Decision Tree atau SVM | Tinggi |
+| F-41 | Pengguna dapat memilih target label sumber yang digunakan sebagai target klasifikasi (QLDE, STANDARD, DE, PSO, EOA) | Tinggi |
+| F-42 | Sistem melatih model secara real-time dan menampilkan metrik evaluasi: Accuracy, Precision, Recall, F1 Score | Tinggi |
+| F-43 | Sistem menampilkan bar chart feature importance dan visualisasi rules logika bisnis untuk model Decision Tree | Tinggi |
+| F-44 | Sistem menampilkan perbandingan performa (akurasi dan waktu latih) antara Decision Tree dan SVM dalam bentuk grafik dan tabel komparatif | Tinggi |
 
 ---
 
@@ -177,18 +164,16 @@ SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (stand
 
 | ID | Kebutuhan |
 |----|-----------|
-| NF-01 | Halaman pertama harus termuat dalam < 10 detik pada koneksi lokal |
-| NF-02 | Hasil clustering harus tampil dalam < 5 detik setelah pemilihan algoritma (menggunakan `@st.cache_data`) |
-| NF-03 | Prediksi single customer harus menghasilkan output dalam < 2 detik |
-| NF-04 | Batch prediction untuk 1.000 baris data harus selesai dalam < 10 detik |
+| NF-01 | Halaman dashboard harus termuat dalam < 5 detik pada koneksi lokal |
+| NF-02 | Eksekusi clustering harus selesai dengan cepat dibantu caching decorator (@st.cache_data) |
+| NF-03 | Pelatihan model klasifikasi secara dinamis harus selesai dalam < 3 detik |
 
 ### 4.2 Keandalan (Reliability)
 
 | ID | Kebutuhan |
 |----|-----------|
-| NF-10 | Sistem harus menampilkan pesan error yang jelas jika file CSV tidak ditemukan |
-| NF-11 | Sistem harus tetap berjalan meskipun `anomalous_customers.csv` tidak tersedia |
-| NF-12 | Sistem harus memvalidasi format kolom CSV yang diupload sebelum pemrosesan |
+| NF-10 | Sistem harus menampilkan pesan error jika file CSV data utama tidak ditemukan |
+| NF-11 | Sistem harus memvalidasi data target klasifikasi agar sesuai dengan jumlah sampel training |
 
 ### 4.3 Usabilitas
 
@@ -198,7 +183,6 @@ SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (stand
 | NF-21 | Seluruh grafik bersifat interaktif (zoom, hover tooltip, legend toggle) menggunakan Plotly |
 | NF-22 | Navigasi antar halaman tersedia di sidebar pada setiap halaman |
 | NF-23 | Setiap metrik dan grafik harus disertai label atau caption yang deskriptif |
-| NF-24 | Warna segmen harus konsisten di seluruh halaman |
 
 ### 4.4 Maintainability
 
@@ -206,16 +190,7 @@ SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (stand
 |----|-----------|
 | NF-30 | Setiap modul Python harus memiliki docstring yang menjelaskan fungsinya |
 | NF-31 | Fungsi data loading dan model harus terpisah dari logika tampilan (UI) |
-| NF-32 | Sistem harus mendukung penggantian model mock dengan file `.pkl` tanpa mengubah logika halaman |
-| NF-33 | Konfigurasi path data harus terpusat di `utils/data_loader.py` |
-
-### 4.5 Portabilitas
-
-| ID | Kebutuhan |
-|----|-----------|
-| NF-40 | Aplikasi harus dapat dijalankan di Windows, Linux, dan macOS |
-| NF-41 | Seluruh dependency harus terdaftar dalam `requirements.txt` |
-| NF-42 | Aplikasi tidak bergantung pada layanan cloud atau API eksternal |
+| NF-32 | Konfigurasi path data harus terpusat di utils/data_loader.py |
 
 ---
 
@@ -233,46 +208,21 @@ SegmentIQ adalah aplikasi web berbasis **Streamlit** yang berdiri sendiri (stand
 │              Streamlit Server (Python)             │
 │                                                   │
 │  ┌──────────┐  ┌───────────┐  ┌───────────────┐  │
-│  │  app.py  │  │  pages/   │  │    utils/     │  │
-│  │  (Home)  │  │ 01 EDA    │  │ data_loader   │  │
-│  └──────────┘  │ 02 Clust  │  │ mock_models   │  │
-│                │ 03 Class  │  │ visualizer    │  │
-│                │ 04 Pred   │  └───────┬───────┘  │
+│  │  app.py  │  │   views/  │  │    utils/     │  │
+│  │  (Home)  │  │ eda.py    │  │ data_loader   │  │
+│  └──────────┘  │ preproc.py│  │ mock_models   │  │
+│                │ cluster.py│  │ visualizer    │  │
+│                │ superv.py │  └───────┬───────┘  │
 │                └───────────┘          │           │
 └───────────────────────────────────────┼───────────┘
                                         │ read/write
 ┌───────────────────────────────────────▼───────────┐
 │                    File System                    │
-│  data/processed/clean_customer_features.csv       │
-│  data/processed/anomalous_customers.csv           │
-│  models/*.pkl  (opsional)                         │
+│  data/processed/customer_features_raw.csv         │
+│  data/processed/customer_features_scaled.csv      │
+│  data/processed/customer_features_pca.csv         │
+│  data/Labeled/hasildata_*.csv                     │
 └───────────────────────────────────────────────────┘
-```
-
-### 5.2 Alur Data
-
-```
-CSV Input
-  │
-  ▼
-data_loader.py
-  ├─ load_clean_data()      → DataFrame (clean)
-  └─ load_anomalous_data()  → DataFrame (anomali)
-        │
-        ▼
-mock_models.py
-  ├─ run_kmeans()         ─┐
-  ├─ run_hierarchical()   ├─→ (df_clustered, metrics)
-  ├─ run_gmm()            │
-  ├─ run_dbscan()        ─┘
-  │
-  ├─ run_decision_tree()  ─┐
-  ├─ run_random_forest()   ├─→ (metrics, feature_importance)
-  └─ run_svm()            ─┘
-        │
-        ▼
-visualizer.py
-  └─ plot_*()  →  Plotly Figure  →  st.plotly_chart()
 ```
 
 ---
@@ -283,33 +233,18 @@ visualizer.py
 
 | Algoritma | Library | Parameter Utama | Metrik Evaluasi |
 |-----------|---------|-----------------|-----------------|
-| **K-Means** | `sklearn.cluster.KMeans` | `n_clusters`, `random_state=42`, `n_init=10` | Silhouette Score, Inertia |
-| **Hierarchical** | `sklearn.cluster.AgglomerativeClustering` | `n_clusters`, `linkage='ward'` | Silhouette Score |
-| **GMM** | `sklearn.mixture.GaussianMixture` | `n_components`, `covariance_type='full'` | Silhouette Score, BIC, AIC |
-| **DBSCAN** | `sklearn.cluster.DBSCAN` | `eps`, `min_samples` | Silhouette Score, n_clusters, n_noise |
+| **K-Means Standard** | sklearn.cluster.KMeans | n_clusters=6, random_state=42, n_init=10 | Silhouette, SSE, DB, CH |
+| **K-Means + DE** | utils.algorithms.KMeansDE | n_clusters=6, pop_size=30, max_iter=100, F=0.5, Cr=0.9 | Silhouette, SSE, DB, CH |
+| **K-Means + PSO** | utils.algorithms.KMeansPSO | n_clusters=6, pop_size=30, max_iter=100 | Silhouette, SSE, DB, CH |
+| **K-Means + EOA** | utils.algorithms.KMeansEOA | n_clusters=6, pop_size=30, max_iter=100 | Silhouette, SSE, DB, CH |
+| **K-Means QLDE** | utils.algorithms.QLDE | n_clusters=6, pop_size=30, max_iter=100, F_init=0.5, Cr=0.9 | Silhouette, SSE, DB, CH |
 
 ### 6.2 Algoritma Klasifikasi
 
 | Algoritma | Library | Parameter Utama | Feature Importance |
 |-----------|---------|-----------------|-------------------|
-| **Decision Tree** | `sklearn.tree.DecisionTreeClassifier` | `max_depth=6`, `random_state=42` | ✅ `feature_importances_` |
-| **Random Forest** | `sklearn.ensemble.RandomForestClassifier` | `n_estimators=100`, `max_depth=8`, `n_jobs=-1` | ✅ `feature_importances_` |
-| **SVM** | `sklearn.svm.SVC` | `kernel='rbf'`, `C=1.0` | ❌ Tidak tersedia langsung |
-
-### 6.3 Preprocessing Fitur
-
-- **Scaler**: `sklearn.preprocessing.StandardScaler` (Z-score normalization)
-- **Train-Test Split**: 80/20, `stratify=y`, `random_state=42`
-- **Label Source**: Hasil K-Means (k=4) digunakan sebagai label target untuk klasifikasi
-
-### 6.4 Segmen Pelanggan (Output)
-
-| Cluster ID | Nama Segmen | Karakteristik |
-|------------|-------------|---------------|
-| 0 | 🏆 Champion | Recency rendah, Frequency tinggi, Monetary tinggi |
-| 1 | 💎 Loyal | Frequency sedang-tinggi, Monetary sedang |
-| 2 | ⚠️ At-Risk | Recency tinggi (lama tidak beli), Frequency menurun |
-| 3 | 🌱 New/Inactive | Frequency sangat rendah, Monetary kecil |
+| **Decision Tree** | sklearn.tree.DecisionTreeClassifier | max_depth=4, random_state=42 | Tersedia langsung |
+| **SVM** | sklearn.svm.SVC | kernel='rbf', class_weight='balanced', random_state=42 | Tidak tersedia langsung |
 
 ---
 
@@ -317,35 +252,24 @@ visualizer.py
 
 ### 7.1 File Input
 
-#### `clean_customer_features.csv`
-- **Lokasi**: `data/processed/clean_customer_features.csv`
-- **Status**: **Wajib**
-- **Sumber**: Output preprocessing Anggota 1
+#### customer_features_raw.csv
+- **Lokasi**: data/processed/customer_features_raw.csv
+- **Status**: Wajib
+- **Jumlah Baris**: 4,335 records
 
-| Kolom | Tipe Data | Constraint |
-|-------|-----------|------------|
-| CustomerID | int | Unik, tidak boleh null |
-| Recency | float | ≥ 0 |
-| Frequency | float | ≥ 1 |
-| Monetary | float | ≥ 0 |
-| AvgSpending | float | ≥ 0 |
-| UniqueProducts | float | ≥ 1 |
-| CancelFrequency | float | ≥ 0 |
-| AvgMonthlySpending | float | ≥ 0 |
+#### customer_features_scaled.csv
+- **Lokasi**: data/processed/customer_features_scaled.csv
+- **Status**: Wajib
+- **Jumlah Baris**: 4,335 records
 
-#### `anomalous_customers.csv`
-- **Lokasi**: `data/processed/anomalous_customers.csv`
-- **Status**: Opsional (aplikasi tetap berjalan tanpa file ini)
-- **Sumber**: Output DBSCAN noise detection Anggota 2
-- **Kolom**: Sama dengan `clean_customer_features.csv`
+#### customer_features_pca.csv
+- **Lokasi**: data/processed/customer_features_pca.csv
+- **Status**: Wajib
+- **Jumlah Baris**: 4,335 records
 
-### 7.2 File Output Batch Prediction
-
-| Kolom | Tipe Data | Deskripsi |
-|-------|-----------|-----------|
-| *(semua kolom input)* | — | Dipertahankan |
-| PredictedCluster | int | ID cluster (0–3) |
-| SegmentName | str | Nama segmen (Champion, Loyal, dll.) |
+#### Labeled Data CSVs
+- **Lokasi**: data/Labeled/hasildata_*.csv
+- **Status**: Wajib untuk supervised learning training labels
 
 ---
 
@@ -353,71 +277,27 @@ visualizer.py
 
 ### 8.1 Antarmuka Pengguna (UI)
 
-- **Framework**: Streamlit ≥ 1.32.0
+- **Framework**: Streamlit >= 1.32.0
 - **Tema**: Dark mode glassmorphism
 - **Tipografi**: Inter (Google Fonts), diimpor via CSS
-- **Warna Utama**:
-
-| Warna | Hex | Penggunaan |
-|-------|-----|------------|
-| Violet | `#7C3AED` | Warna primer, Home & Clustering |
-| Cyan | `#06B6D4` | EDA highlights |
-| Emerald | `#10B981` | Classification, status positif |
-| Amber | `#F59E0B` | Predict, peringatan |
-| Slate | `#94A3B8` | Teks sekunder |
-
-### 8.2 Komponen Visualisasi
-
-| Komponen | Library | Halaman |
-|----------|---------|---------|
-| Histogram distribusi | Plotly | EDA |
-| Heatmap korelasi | Plotly | EDA |
-| Box plot | Plotly | EDA |
-| Scatter 3D (RFM space) | Plotly | Clustering |
-| Scatter 2D | Plotly | Clustering |
-| Bar chart cluster size | Plotly | Clustering |
-| Radar chart | Plotly | Clustering |
-| Bar chart perbandingan algoritma | Plotly | Clustering, Classification |
-| Bar chart feature importance | Plotly | Classification |
-| Progress bar probabilitas | HTML/CSS | Predict |
-
-### 8.3 Antarmuka File
-
-| Tipe | Detail |
-|------|--------|
-| **Input** | File CSV via `st.file_uploader` (halaman Predict — Batch) |
-| **Output** | File CSV via `st.download_button` (halaman Predict — Batch) |
+- **Skema Warna**: Violet (primer), Steel (sekunder), Graphite (batasan), Ash (teks sekunder).
 
 ---
 
-## 9. Batasan & Asumsi
+## 9. Batasan dan Asumsi
 
 ### 9.1 Batasan Sistem
 
-1. Aplikasi hanya mendukung dataset dalam format **CSV** dengan pemisah koma (`,`)
-2. Semua fitur numerik diharapkan sudah dalam skala wajar (tidak perlu transformasi log)
-3. Model tidak disimpan ke disk secara otomatis; model di-cache hanya selama sesi Streamlit aktif
-4. Aplikasi tidak mendukung multi-user secara bersamaan pada mode lokal
-5. Implementasi saat ini menggunakan scikit-learn secara langsung (bukan file `.pkl` yang dipersist)
+1. Aplikasi hanya mendukung dataset dalam format CSV dengan pemisah koma (,).
+2. Model klasifikasi dilatih secara real-time berdasarkan data training berukuran maksimum 2,000 sampel untuk mengoptimalkan kinerja SVM.
+3. Aplikasi tidak mendukung multi-user secara bersamaan pada mode lokal.
 
 ### 9.2 Asumsi
 
-1. Data input sudah melalui proses cleaning oleh Anggota 1 (tidak ada nilai null atau negatif)
-2. CustomerID bersifat unik dalam dataset
-3. Jumlah cluster optimal adalah **4** (Champion, Loyal, At-Risk, New/Inactive)
-4. Browser pengguna mendukung JavaScript untuk rendering Plotly
-5. Koneksi internet tersedia untuk memuat Google Fonts (Inter)
-
-### 9.3 Dependensi Eksternal
-
-| Dependensi | Versi | Kritis |
-|------------|-------|--------|
-| Python | ≥ 3.10 | ✅ Ya |
-| Streamlit | ≥ 1.32.0 | ✅ Ya |
-| scikit-learn | ≥ 1.3.0 | ✅ Ya |
-| pandas | ≥ 2.0.0 | ✅ Ya |
-| plotly | ≥ 5.18.0 | ✅ Ya |
-| Google Fonts (CDN) | — | ❌ Tidak (hanya kosmetik) |
+1. Data input sudah melalui proses cleaning (tidak ada nilai null atau negatif).
+2. CustomerID bersifat unik dalam dataset.
+3. Jumlah cluster optimal adalah 6 sesuai dengan hasil optimalitas evaluasi centroid.
+4. Browser pengguna mendukung JavaScript untuk rendering Plotly.
 
 ---
 
@@ -425,8 +305,9 @@ visualizer.py
 
 | Versi | Tanggal | Deskripsi | Penulis |
 |-------|---------|-----------|---------|
-| 1.0 | Juni 2026 | Draft awal — mencakup seluruh 5 modul | Kelompok 6 |
+| 1.0 | Juni 2026 | Draft awal - mencakup seluruh 5 modul | Kelompok 6 |
+| 1.1 | Juni 2026 | Final alignment - menghapus DBSCAN, membatasi klasifikasi ke DT dan SVM, mengunci K=6 | Kelompok 6 |
 
 ---
 
-*Dokumen ini merupakan bagian dari tugas akhir mata kuliah Machine Learning — Kelompok 6.*
+*Dokumen ini merupakan bagian dari tugas akhir mata kuliah Machine Learning - Kelompok 6.*

@@ -1,6 +1,6 @@
 """
 views/about.py
-About Page — Project context, datasets, algorithms, references and group contributors.
+About Page - Project context, datasets, algorithms, references and group contributors.
 """
 
 import streamlit as st
@@ -22,11 +22,11 @@ def show_about():
     with col_left:
         st.markdown('<div class="sl">Project Overview</div>', unsafe_allow_html=True)
         st.markdown("""
-        Dashboard ini adalah hasil akhir dari **ML Final Project (Kelompok 6)**. Project ini mengimplementasikan segmentasi pelanggan secara hybrid pada data retail digital:
+        Dashboard ini adalah hasil akhir dari ML Final Project (Kelompok 6). Project ini mengimplementasikan segmentasi pelanggan secara hybrid pada data retail digital:
         
-        1. **Data Preprocessing & Noise Isolation**: Melakukan pembersihan data, ekstraksi fitur RFM++, dan memisahkan pelanggan anomali (outliers) menggunakan algoritma **DBSCAN**.
-        2. **Unsupervised Clustering**: Melakukan pengelompokan pelanggan menggunakan **K-Means Clustering** yang dioptimasi dengan algoritma metaheuristik **Q-Learning based Differential Evolution (QLDE)** untuk mencegah centroid terjebak dalam local optima.
-        3. **Supervised Classifier**: Melatih pengklasifikasi (**Random Forest**) menggunakan label segmen optimal sebagai target klasifikasi untuk prediksi segmen secara real-time.
+        1. **Data Preprocessing & Feature Engineering**: Melakukan pembersihan data, ekstraksi fitur RFM, dan standardisasi fitur.
+        2. **Unsupervised Clustering**: Melakukan pengelompokan pelanggan menggunakan K-Means Clustering yang dioptimasi dengan algoritma metaheuristik Q-Learning based Differential Evolution (QLDE) untuk mencegah centroid terjebak dalam local optima dengan jumlah cluster K=6.
+        3. **Supervised Classifier**: Melatih pengklasifikasi (Decision Tree dan SVM) menggunakan label segmen optimal sebagai target klasifikasi untuk perbandingan performa.
         """)
         
         st.markdown('<div class="sl">Dataset Reference</div>', unsafe_allow_html=True)
@@ -47,9 +47,10 @@ def show_about():
         st.markdown('<div class="sl">Project Team (Kelompok 6)</div>', unsafe_allow_html=True)
         
         team_members = [
-            ("Anggota 1", "Data Engineer", "Bertanggung jawab pada data pipeline, Feature Engineering (RFM++), dan Outlier Detection."),
-            ("Anggota 2", "Unsupervised ML Specialist", "Mengimplementasikan optimasi centroid K-Means menggunakan Q-Learning based DE (QLDE)."),
-            ("Anggota 3", "Supervised ML Specialist", "Membangun model klasifikasi supervised untuk prediksi segmen real-time."),
+            ("Ibnu Dwiki Hermawan", "EDA & Preprocessing", "Bertanggung jawab pada data cleaning, visualisasi Exploratory Data Analysis, dan Feature Engineering."),
+            ("Naufal Rifqi Rahman", "Unsupervised Learning", "Mengimplementasikan optimasi centroid K-Means menggunakan algoritma metaheuristik termasuk QLDE."),
+            ("Muhammad Farel Alkayis", "Supervised Learning", "Membangun model klasifikasi supervised menggunakan Decision Tree dan SVM."),
+            ("Mochammad Azriel Albian Putra", "Website Implementation", "Mengembangkan arsitektur web, antarmuka dashboard, dan integrasi visualisasi."),
         ]
         
         for name, role, desc in team_members:
@@ -65,7 +66,7 @@ def show_about():
         st.markdown("""
         Implementasi optimasi centroid metaheuristik pada project ini mengacu pada jurnal:
         
-        *“Customer segmentation in the digital marketing using a Q-learning based differential evolution algorithm integrated with K-means clustering”* (PLOS One, 2025).
+        *Customer segmentation in the digital marketing using a Q-learning based differential evolution algorithm integrated with K-means clustering* (PLOS One, 2025).
         """)
 
     # ── Footer ─────────────────────────────────────────────────────────────────────

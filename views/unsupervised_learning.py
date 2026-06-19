@@ -45,7 +45,8 @@ def show_unsupervised_learning():
             index=4,
             help="Select the clustering optimization strategy to display in detail."
         )
-        n_clusters = st.slider("Number of Clusters (k):", 2, 8, 6)
+        n_clusters = 6
+        st.info("Number of Clusters (K): **6** (Optimal selection locked based on the Elbow & Silhouette analysis in the repository)")
         st.markdown("---")
         x_axis = st.selectbox("2D Scatter X-axis", ["Recency", "Frequency", "Monetary", "AvgSpending"], index=0)
         y_axis = st.selectbox("2D Scatter Y-axis", ["Recency", "Frequency", "Monetary", "AvgSpending"], index=2)

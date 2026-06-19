@@ -1,47 +1,49 @@
 """
 views/supervised_learning.py
-Supervised Learning Page — Compares classifiers (LR, DT, RF, SVM) and provides an interactive prediction form.
+Supervised Learning Page — Compares Decision Tree and SVM classifiers across multiple clustering datasets and provides an interactive prediction form.
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix
-from sklearn.linear_model import LogisticRegression
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier, export_text
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
 
-from utils.data_loader import load_clean_data, load_labeled_qlde_data, FEATURE_COLUMNS, FEATURE_LABELS
+from utils.data_loader import load_clean_data, COLUMN_MAPPING, FEATURE_COLUMNS, FEATURE_LABELS
 from utils.mock_models import (
-    run_unsupervised_algorithm,
-    run_logistic_regression,
     run_decision_tree,
-    run_random_forest,
     run_svm,
+    run_cross_dataset_comparison,
     _prep_classification_data,
+    FILE_DATASETS,
 )
 from utils.visualizer import (
-    plot_algorithm_comparison,
+    plot_classification_comparison_chart,
     plot_feature_importance,
     plot_confusion_matrix,
     CLUSTER_COLORS,
     CLUSTER_NAMES,
 )
 
+def load_selected_labeled_data(dataset_name: str) -> pd.DataFrame:
+    filepath = FILE_DATASETS.get(dataset_name)
+    df = pd.read_csv(filepath)
+    df["CustomerID"] = df["CustomerID"].astype(int)
+    df = df.rename(columns=COLUMN_MAPPING)
+    return df
+
 def show_supervised_learning():
     # ── Load Data & Generate Target Labels ────────────────────────────────────────
-    df = load_clean_data()
-    # Target labels are loaded directly from precomputed QLDE results (k=6)
-    df_clustered = load_labeled_qlde_data()
-
+    df_raw = load_clean_data()
+    
     # ── Header ────────────────────────────────────────────────────────────────────
     st.markdown("""
     <div class="hdr">
         <div>
             <h1>Supervised Learning & Real-time Prediction</h1>
-            <p>Train classification models using QLDE segments as targets to predict new customer profiles in real-time.</p>
+            <p>Train classification models using various customer segments as targets to predict customer profiles in real-time.</p>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -49,51 +51,53 @@ def show_supervised_learning():
     # ── Sidebar Controls ──────────────────────────────────────────────────────────
     with st.sidebar:
         st.markdown("## Classifier Settings")
+        selected_dataset = st.selectbox(
+            "Target Labels Source:",
+            ["QLDE (Paper)", "STANDARD (Baseline)", "DE", "PSO", "EOA"],
+            index=0,
+            help="Choose which clustering results to use as the target labels for classifier training."
+        )
         selected_algo = st.selectbox(
             "Select Model for Details:",
-            ["Logistic Regression", "Decision Tree", "Random Forest", "SVM"],
-            index=2,
+            ["Decision Tree", "SVM"],
+            index=0,
             help="Choose a classification model to view its detailed performance, confusion matrix, and feature importances."
         )
         st.markdown("---")
-        st.caption("Training target: 6 customer segments derived from optimal K-Means QLDE clustering.")
+        st.caption(f"Training target: Customer segments derived from {selected_dataset} clustering.")
+
+    # Load labeled dataset based on selection
+    df_clustered = load_selected_labeled_data(selected_dataset)
 
     # ── Train Classifiers and Collect Metrics ─────────────────────────────────────
-    with st.spinner("Training classifiers..."):
-        lr_metrics, lr_importance = run_logistic_regression(df_clustered)
-        dt_metrics, dt_importance = run_decision_tree(df_clustered)
-        rf_metrics, rf_importance = run_random_forest(df_clustered)
-        svm_metrics, svm_importance = run_svm(df_clustered)
+    with st.spinner(f"Training models on {selected_dataset}..."):
+        dt_metrics, dt_importance, dt_model = run_decision_tree(df_clustered)
+        svm_metrics, svm_importance, svm_model, svm_scaler = run_svm(df_clustered)
 
-    # Prepare classifier comparison database
+    # Prepare classifier results
     classifier_results = {
-        "Logistic Regression": {"metrics": lr_metrics, "importance": lr_importance},
-        "Decision Tree": {"metrics": dt_metrics, "importance": dt_importance},
-        "Random Forest": {"metrics": rf_metrics, "importance": rf_importance},
-        "SVM": {"metrics": svm_metrics, "importance": svm_importance},
+        "Decision Tree": {"metrics": dt_metrics, "importance": dt_importance, "model": dt_model},
+        "SVM": {"metrics": svm_metrics, "importance": svm_importance, "model": svm_model},
     }
 
     # ── 4 Metric Cards for selected classifier ────────────────────────────────────
-    st.markdown(f'<div class="sl">{selected_algo} — Model Metrics</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="sl">{selected_algo} Metrics on {selected_dataset} Labels</div>', unsafe_allow_html=True)
 
-    # Random Forest is the best classifier (Accuracy > 97%)
-    is_best_clf = (selected_algo == "Random Forest")
-    card_class = "mc-highlight" if is_best_clf else "mc"
     metrics = classifier_results[selected_algo]["metrics"]
+    card_class = "mc-highlight"
 
     metric_list = [
         ("Accuracy", f"{metrics['Accuracy']:.4f}", "Overall prediction accuracy on test set"),
         ("F1-Score (macro)", f"{metrics['F1-Score']:.4f}", "Harmonic mean of precision and recall"),
-        ("Precision (macro)", f"{metrics['Precision']:.4f}", "Proportion of positive identifications that were actually correct"),
-        ("Recall (macro)", f"{metrics['Recall']:.4f}", "Proportion of actual positives that were identified correctly"),
+        ("Precision (macro)", f"{metrics['Precision']:.4f}", "Proportion of positive identifications that were correct"),
+        ("Recall (macro)", f"{metrics['Recall']:.4f}", "Proportion of actual positives that were correct"),
     ]
 
     cards_html = '<div class="metric-grid cols-4">'
     for label, value, desc in metric_list:
-        badge = " (Best)" if is_best_clf else ""
         cards_html += f'<div class="{card_class}">' \
                       f'<div class="mc-val">{value}</div>' \
-                      f'<div class="mc-lbl">{label}{badge}</div>' \
+                      f'<div class="mc-lbl">{label}</div>' \
                       f'<div style="font-size: 12px; color: var(--color-ash); margin-top: 6px; line-height: 1.2;">{desc}</div>' \
                       f'</div>'
     cards_html += '</div>'
@@ -105,23 +109,13 @@ def show_supervised_learning():
 
     # Compute actual confusion matrix for detail view
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-
-    if selected_algo == "Logistic Regression":
-        model = LogisticRegression(max_iter=500, random_state=42)
-    elif selected_algo == "Decision Tree":
-        model = DecisionTreeClassifier(max_depth=6, random_state=42)
-    elif selected_algo == "SVM":
-        model = SVC(kernel='rbf', probability=True, random_state=42)
-        X_train_scaled = X_train_scaled[:2000]
-        y_train = y_train[:2000]
+    
+    if selected_algo == "Decision Tree":
+        y_pred = dt_model.predict(X_test)
     else:
-        model = RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42, n_jobs=-1)
-
-    model.fit(X_train_scaled, y_train)
-    y_pred = model.predict(X_test_scaled)
+        X_test_scaled = svm_scaler.transform(X_test)
+        y_pred = svm_model.predict(X_test_scaled)
+        
     cm = confusion_matrix(y_test, y_pred).tolist()
     labels = [CLUSTER_NAMES[c] for c in sorted(np.unique(y_train))]
 
@@ -137,61 +131,27 @@ def show_supervised_learning():
             use_container_width=True
         )
 
-    # ── Bar Chart Comparison (All Classifiers) ────────────────────────────────────
-    st.markdown("---")
-    st.markdown('<div class="sl">Model Performance Comparison</div>', unsafe_allow_html=True)
+    # ── Decision Tree Logic (Business Rules) ──────────────────────────────────────
+    if selected_algo == "Decision Tree":
+        st.markdown("---")
+        st.markdown('<div class="sl">Decision Tree Logical Business Rules (Aturan Bisnis)</div>', unsafe_allow_html=True)
+        rules_text = export_text(dt_model, feature_names=FEATURE_COLUMNS)
+        st.markdown("The following nested conditional logic shows the business rules extracted from the Decision Tree model:")
+        st.code(rules_text, language="text")
 
-    classifier_comparison = {
-        "Logistic Regression": {
-            "Accuracy": lr_metrics["Accuracy"],
-            "F1-Score": lr_metrics["F1-Score"],
-            "Precision": lr_metrics["Precision"],
-            "Recall": lr_metrics["Recall"],
-        },
-        "Decision Tree": {
-            "Accuracy": dt_metrics["Accuracy"],
-            "F1-Score": dt_metrics["F1-Score"],
-            "Precision": dt_metrics["Precision"],
-            "Recall": dt_metrics["Recall"],
-        },
-        "Random Forest": {
-            "Accuracy": rf_metrics["Accuracy"],
-            "F1-Score": rf_metrics["F1-Score"],
-            "Precision": rf_metrics["Precision"],
-            "Recall": rf_metrics["Recall"],
-        },
-        "SVM": {
-            "Accuracy": svm_metrics["Accuracy"],
-            "F1-Score": svm_metrics["F1-Score"],
-            "Precision": svm_metrics["Precision"],
-            "Recall": svm_metrics["Recall"],
-        }
-    }
-    st.plotly_chart(plot_algorithm_comparison(classifier_comparison), use_container_width=True)
+    # ── Bar Chart Comparison (All Classifiers & Datasets) ──────────────────────────
+    st.markdown("---")
+    st.markdown('<div class="sl">Cross-Dataset Performance Comparison (Accuracy Battle)</div>', unsafe_allow_html=True)
+
+    df_results = run_cross_dataset_comparison()
+    st.plotly_chart(plot_classification_comparison_chart(df_results), use_container_width=True)
+    
+    st.markdown("**Detailed Metrics Table:**")
+    st.dataframe(df_results, use_container_width=True)
 
     # ── Interactive Prediction Form ───────────────────────────────────────────────
     st.markdown("---")
     st.markdown('<div class="sl">Real-time Segment Predictor</div>', unsafe_allow_html=True)
-
-    # Train the inference model based on the selected classifier
-    valid = df_clustered[df_clustered["Cluster"] != -1]
-    X_infer = valid[FEATURE_COLUMNS].values
-    y_infer = valid["Cluster"].values
-    scaler_infer = StandardScaler()
-    X_infer_scaled = scaler_infer.fit_transform(X_infer)
-
-    if selected_algo == "Logistic Regression":
-        clf_infer = LogisticRegression(max_iter=500, random_state=42)
-    elif selected_algo == "Decision Tree":
-        clf_infer = DecisionTreeClassifier(max_depth=6, random_state=42)
-    elif selected_algo == "SVM":
-        clf_infer = SVC(kernel='rbf', probability=True, random_state=42)
-        X_infer_scaled = X_infer_scaled[:2000]
-        y_infer = y_infer[:2000]
-    else:
-        clf_infer = RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42, n_jobs=-1)
-
-    clf_infer.fit(X_infer_scaled, y_infer)
 
     col_form, col_result = st.columns([1, 1], gap="large")
 
@@ -229,10 +189,18 @@ def show_supervised_learning():
                 "AvgMonthlySpending": avg_monthly,
             }])
             
-            # Scale and predict
-            X_input = scaler_infer.transform(input_data[FEATURE_COLUMNS].values)
-            pred_cluster = int(clf_infer.predict(X_input)[0])
-            pred_proba = clf_infer.predict_proba(X_input)[0]
+            # Predict and calculate probabilities
+            input_arr = input_data[FEATURE_COLUMNS].values
+            
+            if selected_algo == "Decision Tree":
+                pred_cluster = int(dt_model.predict(input_arr)[0])
+                pred_proba = dt_model.predict_proba(input_arr)[0]
+                classes = dt_model.classes_
+            else:
+                input_scaled = svm_scaler.transform(input_arr)
+                pred_cluster = int(svm_model.predict(input_scaled)[0])
+                pred_proba = svm_model.predict_proba(input_scaled)[0]
+                classes = svm_model.classes_
             
             segment_name = CLUSTER_NAMES.get(pred_cluster, f"Cluster {pred_cluster}")
             color = CLUSTER_COLORS.get(pred_cluster, "#A39CF7")
@@ -249,7 +217,7 @@ def show_supervised_learning():
             """, unsafe_allow_html=True)
 
             st.markdown("<br><b>Probability Breakdown per Segment:</b>", unsafe_allow_html=True)
-            for i, cls in enumerate(clf_infer.classes_):
+            for i, cls in enumerate(classes):
                 name = CLUSTER_NAMES.get(int(cls), f"Cluster {cls}")
                 prob = pred_proba[i] * 100
                 color_cls = CLUSTER_COLORS.get(int(cls), "#888888")

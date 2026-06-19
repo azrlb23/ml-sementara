@@ -431,3 +431,29 @@ def plot_feature_importance(importances: dict[str, float], title: str = "Feature
     layout_dict.update(title=title, height=max(300, len(features) * 45), xaxis_title="Importance Score")
     fig.update_layout(layout_dict)
     return fig
+
+
+def plot_classification_comparison_chart(df_results: pd.DataFrame) -> go.Figure:
+    """Replicates 04.5 classification accuracy battle using Plotly Bar."""
+    fig = px.bar(
+        df_results,
+        x="Dataset",
+        y="Test Set Accuracy (%)",
+        color="Method",
+        barmode="group",
+        color_discrete_map={
+            "Decision Tree (DT)": "#808080",
+            "Kernel SVM (KSVM)": "#7089ba"
+        },
+        text="Test Set Accuracy (%)"
+    )
+    fig.update_traces(textposition="outside", texttemplate="%{text:.1f}%")
+    layout_dict = BASE_LAYOUT.copy()
+    layout_dict.update(
+        title="Accuracy Battle: Decision Tree vs SVM across Clustering Methods",
+        yaxis=dict(range=[0, 110], showgrid=True, gridcolor="#1c1c1c", zeroline=False, color="#808080"),
+        height=400
+    )
+    fig.update_layout(layout_dict)
+    return fig
+

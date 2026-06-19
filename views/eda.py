@@ -28,7 +28,6 @@ def show_eda():
 
     # ── Load Data ─────────────────────────────────────────────────────────────────
     df = load_clean_data()
-    df_anomaly = pd.DataFrame()
     features = get_feature_columns()
 
     # ── Header ────────────────────────────────────────────────────────────────────
@@ -44,7 +43,7 @@ def show_eda():
     # ── KPI Dataset Summary Cards (Lime Highlight) ──────────────────────────────
     st.markdown('<div class="sl">Dataset Metadata Summary</div>', unsafe_allow_html=True)
     summary_cards = [
-        ("Total Customers", f"{len(df):,}", "Inlier records in dataset"),
+        ("Total Customers", f"{len(df):,}", "Records in dataset"),
         ("Feature Count", f"{len(features)}", "Engineered ML features"),
         ("Missing Values", "0", "All null entries imputed/resolved"),
         ("Duplicates", "0", "Duplicate records removed"),
@@ -63,14 +62,7 @@ def show_eda():
     # ── Descriptive Stats ─────────────────────────────────────────────────────────
     if show_raw_stats:
         st.markdown('<div class="sl">Descriptive Statistics</div>', unsafe_allow_html=True)
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("**Cleaned Customer Features (Inliers)**")
-            st.dataframe(df[features].describe().T.style.format("{:.2f}"), use_container_width=True)
-        with col2:
-            if not df_anomaly.empty:
-                st.markdown("**Isolated Anomalous Customers (Outliers)**")
-                st.dataframe(df_anomaly[features].describe().T.style.format("{:.2f}"), use_container_width=True)
+        st.dataframe(df[features].describe().T.style.format("{:.2f}"), use_container_width=True)
 
     # ── RFM Distributions ─────────────────────────────────────────────────────────
     if show_rfm:
