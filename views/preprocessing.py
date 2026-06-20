@@ -65,13 +65,16 @@ def show_preprocessing():
     st.markdown('<div class="sl">Feature Scaling (Z-Score Standardization)</div>', unsafe_allow_html=True)
     st.caption("Standardization ensures all features (Recency, Frequency, Monetary, etc.) have equal weight in distance calculations (Euclidean).")
 
-    # Load pre-trained StandardScaler if exists, otherwise train it
-    scaler = load_model_if_exists("standard_scaler.pkl")
-    if scaler is not None:
-        X_scaled = scaler.transform(df_raw[features].values)
-    else:
-        scaler = StandardScaler()
-        X_scaled = scaler.fit_transform(df_raw[features])
+    # Apply Winsorization (capping at 99th percentile, except FromUK)
+    df_winsorized = df_raw[features].copy()
+    for col in features:
+        if col != 'FromUK':
+            cap_val = df_winsorized[col].quantile(0.99)
+            df_winsorized[col] = df_winsorized[col].clip(upper=cap_val)
+            
+    from sklearn.preprocessing import PowerTransformer
+    pt = PowerTransformer(method='yeo-johnson', standardize=True)
+    X_scaled = pt.fit_transform(df_winsorized.values)
         
     df_scaled = pd.DataFrame(X_scaled, columns=features)
 
@@ -85,7 +88,7 @@ def show_preprocessing():
         st.dataframe(stats_before.style.format("{:.2f}"), use_container_width=True)
 
     with col2:
-        st.markdown("**Statistics AFTER Standardization (StandardScaler Output)**")
+        st.markdown("**Statistics AFTER Standardization (PowerTransformer Output)**")
         st.dataframe(stats_after.style.format("{:.2f}"), use_container_width=True)
 
     # ── PCA Dimensionality Reduction ─────────────────────────────────────────────
@@ -134,12 +137,10 @@ def show_preprocessing():
             height=380
         )
         
-        # Load PCA selected model from repository if exists
+        # Fit PCA dynamically to align with the active preprocessing pipeline
         n_selected = 6
-        pca_selected = load_model_if_exists("pca_model.pkl")
-        if pca_selected is None:
-            pca_selected = PCA(n_components=n_selected, random_state=42)
-            pca_selected.fit(X_scaled)
+        pca_selected = PCA(n_components=n_selected, random_state=42)
+        pca_selected.fit(X_scaled)
         
         # Loadings dataframe
         loadings = pd.DataFrame(
@@ -177,7 +178,7 @@ def show_preprocessing():
             st.markdown("""
             <div style="font-size: 13px; color: var(--color-ash); line-height: 1.5; margin-top: -10px;">
                 <b>Variance Explanation Analysis:</b><br/>
-                As shown in the cumulative variance chart (Figure 8a in paper), the first <b>6 components</b> explain <b>90.7%</b> of the cumulative variance contribution (exceeding the 90% threshold). This achieves effective dimensionality reduction while retaining the vast majority of customer behavioral characteristics.
+                As shown in the cumulative variance chart (Figure 8a in paper), the first <b>6 components</b> explain <b>95.6%</b> of the cumulative variance contribution (exceeding the 90% threshold). This achieves effective dimensionality reduction while retaining the vast majority of customer behavioral characteristics.
             </div>
             """, unsafe_allow_html=True)
             

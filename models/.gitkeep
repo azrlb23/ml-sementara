@@ -1,7 +1,0 @@
-# Models from Anggota 2 (Clustering) and Anggota 3 (Classification) go here.
-# Expected files:
-#   kmeans.pkl
-#   hierarchical.pkl
-#   gmm.pkl
-#   decision_tree.pkl (or random_forest.pkl / svm.pkl / ann.pkl)
-#   label_encoder.pkl (if needed)

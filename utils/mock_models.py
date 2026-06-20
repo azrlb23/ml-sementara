@@ -211,14 +211,7 @@ def _prep_classification_data(df_clustered: pd.DataFrame, cluster_col: str = "Cl
     valid = df_clustered[df_clustered[cluster_col] != -1].copy()
     X = valid[FEATURE_COLUMNS].values
     y = valid[cluster_col].values
-    
-    unique, counts = np.unique(y, return_counts=True)
-    min_count = counts.min() if len(counts) > 0 else 0
-    
-    if min_count >= 2:
-        return train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-    else:
-        return train_test_split(X, y, test_size=0.2, random_state=42)
+    return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
 def _compute_metrics(y_true, y_pred) -> dict:
