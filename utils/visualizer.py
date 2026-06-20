@@ -386,8 +386,8 @@ def plot_donut_chart(df: pd.DataFrame, cluster_col: str = "Cluster") -> go.Figur
     layout_dict.update(
         title="Cluster Distribution Proportions",
         height=380,
-        legend=dict(orientation="h", y=-0.15, x=0.5, xanchor="center"),
-        margin=dict(l=20, r=20, t=50, b=80)
+        legend=dict(orientation="v", y=0.5, x=1.05, yanchor="middle", xanchor="left"),
+        margin=dict(l=20, r=100, t=50, b=20)
     )
     fig.update_layout(layout_dict)
     return fig

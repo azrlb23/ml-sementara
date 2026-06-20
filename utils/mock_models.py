@@ -9,7 +9,8 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
+from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 from sklearn.inspection import permutation_importance
 from sklearn.preprocessing import StandardScaler
@@ -52,63 +53,69 @@ def _scale_features(df: pd.DataFrame) -> np.ndarray:
 @st.cache_data(show_spinner="Running Clustering Algorithm...")
 def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 6) -> tuple[pd.DataFrame, dict]:
     """
-    Runs actual clustering optimization on PCA-reduced customer features (X_pca).
+    Loads pre-computed clustering results and metrics aligned with the notebooks.
     """
-    from utils.algorithms import QLDE, KMeansDE, KMeansPSO, KMeansEOA
-    from utils.data_loader import load_pca_data
+    import numpy as np
     
-    # Load PCA features (6 principal components)
-    df_pca = load_pca_data()
+    labels = None
+    sse = 0.0
+    sil = 0.0
+    db = 9.99
+    ch = 0.0
     
-    # Align by CustomerID
-    df_pca = df_pca.set_index("CustomerID")
-    df_align = df.set_index("CustomerID")
-    df_pca_aligned = df_pca.reindex(df_align.index)
-    X_pca = df_pca_aligned.values
-    
-    if algorithm == "K-Means Standard":
+    if algorithm == "K-Means Standard" and k == 6:
+        labels_file = LABELED_DIR / "hasildata_kmeans-standard.csv"
+        if labels_file.exists():
+            df_std = pd.read_csv(labels_file)
+            df_align = df.merge(df_std[["CustomerID", "Cluster"]], on="CustomerID", how="left")
+            labels = df_align["Cluster"].fillna(0).astype(int).values
+            
+            sse = np.load(MODELS_DIR / "kmeans-standard_inertia.npy").item()
+            sil = np.load(MODELS_DIR / "kmeans-standard_silhouette.npy").item()
+            db = np.load(MODELS_DIR / "kmeans-standard_db_score.npy").item()
+            ch = np.load(MODELS_DIR / "kmeans-standard_ch_score.npy").item()
+            
+    elif algorithm == "K-Means + DE" and k == 6:
+        labels_file = LABELED_DIR / "hasildata_kmeans-de.csv"
+        if labels_file.exists():
+            df_de = pd.read_csv(labels_file)
+            df_align = df.merge(df_de[["CustomerID", "Cluster"]], on="CustomerID", how="left")
+            labels = df_align["Cluster"].fillna(0).astype(int).values
+            
+            sse = np.load(MODELS_DIR / "kmeans-de_inertia.npy").item()
+            sil = np.load(MODELS_DIR / "kmeans-de_silhouette.npy").item()
+            db = np.load(MODELS_DIR / "kmeans-de_db_score.npy").item()
+            ch = np.load(MODELS_DIR / "kmeans-de_ch_score.npy").item()
+            
+    elif algorithm == "K-Means QLDE" and k == 6:
+        labels_file = LABELED_DIR / "hasildata_kmeans-qlde.csv"
+        if labels_file.exists():
+            df_qlde = pd.read_csv(labels_file)
+            df_align = df.merge(df_qlde[["CustomerID", "Cluster"]], on="CustomerID", how="left")
+            labels = df_align["Cluster"].fillna(0).astype(int).values
+            
+            sse = np.load(MODELS_DIR / "qlde_inertia.npy").item()
+            sil = np.load(MODELS_DIR / "qlde_silhouette.npy").item()
+            db = np.load(MODELS_DIR / "qlde_db_score.npy").item()
+            ch = np.load(MODELS_DIR / "qlde_ch_score.npy").item()
+            
+    # Fallback to dynamic calculation if files are missing or for non-optimal k
+    if labels is None or k != 6:
+        from sklearn.cluster import KMeans
+        from utils.data_loader import load_pca_data
+        df_pca = load_pca_data().set_index("CustomerID").reindex(df.set_index("CustomerID").index)
+        X_pca = df_pca.values
         model = KMeans(n_clusters=k, random_state=42, n_init=10)
         model.fit(X_pca)
         labels = model.labels_
         sse = model.inertia_
-    elif algorithm == "K-Means + DE":
-        model = KMeansDE(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X_pca)
-        labels = model.labels_
-        sse = model.inertia_
-    elif algorithm == "K-Means + PSO":
-        model = KMeansPSO(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X_pca)
-        labels = model.labels_
-        sse = model.inertia_
-    elif algorithm == "K-Means + EOA":
-        model = KMeansEOA(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X_pca)
-        labels = model.labels_
-        sse = model.inertia_
-    elif algorithm == "K-Means QLDE":
-        model = QLDE(n_clusters=k, pop_size=30, max_iter=100, random_state=42)
-        model.fit(X_pca)
-        labels = model.labels_
-        sse = model.inertia_
-    else:
-        model = KMeans(n_clusters=k, random_state=42, n_init=10)
-        model.fit(X_pca)
-        labels = model.labels_
-        sse = model.inertia_
+        sil = silhouette_score(X_pca, labels) if len(np.unique(labels)) > 1 else 0.0
+        db = davies_bouldin_score(X_pca, labels) if len(np.unique(labels)) > 1 else 9.99
+        ch = calinski_harabasz_score(X_pca, labels) if len(np.unique(labels)) > 1 else 0.0
 
     result = df.copy()
     result["Cluster"] = labels
     
-    if len(np.unique(labels)) > 1:
-        sil = silhouette_score(X_pca, labels)
-        db = davies_bouldin_score(X_pca, labels)
-        ch = calinski_harabasz_score(X_pca, labels)
-    else:
-        sil = 0.0
-        db = 9.99
-        ch = 0.0
-        
     metrics = {
         "SSE": round(sse, 1),
         "Silhouette Score": round(sil, 4),
@@ -122,27 +129,37 @@ def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 6) -> 
 
 @st.cache_data(show_spinner="Generating Convergence Curves...")
 def get_convergence_curves(max_iter: int = 50) -> pd.DataFrame:
-    """Generates actual SSE convergence data over iterations for the metaheuristics on X_pca."""
-    from utils.data_loader import load_pca_data
-    from utils.algorithms import QLDE, KMeansDE
+    """Loads pre-computed SSE convergence data over iterations."""
+    import numpy as np
     
-    df_pca = load_pca_data().drop(columns=["CustomerID"])
-    X_pca = df_pca.values
-    k = 6
+    de_conv_file = MODELS_DIR / "kmeans-de_convergence.npy"
+    qlde_conv_file = MODELS_DIR / "qlde_convergence.npy"
     
-    de = KMeansDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    de.fit(X_pca)
-    
-    qlde = QLDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    qlde.fit(X_pca)
-    
-    l = min(len(de.convergence_curve_), len(qlde.convergence_curve_))
-    
-    return pd.DataFrame({
-        "Iteration": np.arange(1, l + 1),
-        "K-Means + DE": de.convergence_curve_[:l],
-        "K-Means QLDE": qlde.convergence_curve_[:l],
-    })
+    if de_conv_file.exists() and qlde_conv_file.exists():
+        de_curve = np.load(de_conv_file)
+        qlde_curve = np.load(qlde_conv_file)
+        l = min(len(de_curve), len(qlde_curve), max_iter)
+        return pd.DataFrame({
+            "Iteration": np.arange(1, l + 1),
+            "K-Means + DE": de_curve[:l],
+            "K-Means QLDE": qlde_curve[:l],
+        })
+    else:
+        from utils.data_loader import load_pca_data
+        from utils.algorithms import QLDE, KMeansDE
+        df_pca = load_pca_data().drop(columns=["CustomerID"])
+        X_pca = df_pca.values
+        k = 6
+        de = KMeansDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
+        de.fit(X_pca)
+        qlde = QLDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
+        qlde.fit(X_pca)
+        l = min(len(de.convergence_curve_), len(qlde.convergence_curve_), max_iter)
+        return pd.DataFrame({
+            "Iteration": np.arange(1, l + 1),
+            "K-Means + DE": de.convergence_curve_[:l],
+            "K-Means QLDE": qlde.convergence_curve_[:l],
+        })
 
 
 @st.cache_data(show_spinner="Evaluating all algorithms for comparison...")
@@ -175,16 +192,20 @@ def get_cluster_profiles(df_clustered: pd.DataFrame, cluster_col: str = "Cluster
     )
 
 
-# ── Supervised Algorithms (Classification) ───────────────────────────────────
-
-# Mapping of all 5 clustering datasets as defined in the repository
+# ── Supervised Algorithms (C# Mapping of focused clustering datasets as defined in the repository
 FILE_DATASETS = {
     'QLDE (Paper)': LABELED_DIR / 'hasildata_kmeans-qlde.csv',
     'STANDARD (Baseline)': LABELED_DIR / 'hasildata_kmeans-standard.csv',
-    'DE': LABELED_DIR / 'hasildata_kmeans-de.csv',
-    'PSO': LABELED_DIR / 'hasildata_kmeans-pso.csv',
-    'EOA': LABELED_DIR / 'hasildata_kmeans-eoa.csv'
+    'DE': LABELED_DIR / 'hasildata_kmeans-de.csv'
 }
+
+def _get_suffix(dataset_name: str) -> str:
+    if "QLDE" in dataset_name:
+        return "qlde"
+    elif "STANDARD" in dataset_name:
+        return "standard"
+    else:
+        return "de"
 
 def _prep_classification_data(df_clustered: pd.DataFrame, cluster_col: str = "Cluster"):
     valid = df_clustered[df_clustered[cluster_col] != -1].copy()
@@ -209,59 +230,92 @@ def _compute_metrics(y_true, y_pred) -> dict:
     }
 
 
-@st.cache_data(show_spinner="Training Decision Tree...")
-def run_decision_tree(df_clustered: pd.DataFrame) -> tuple[dict, dict, DecisionTreeClassifier]:
-    """Decision Tree classifier (unscaled features, max_depth=4)."""
+@st.cache_data(show_spinner="Running Decision Tree...")
+def run_decision_tree(df_clustered: pd.DataFrame, dataset_name: str) -> tuple[dict, dict, DecisionTreeClassifier]:
+    """Decision Tree classifier (loaded from pre-trained model or dynamically fit)."""
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
-
-    # Decision tree does not require scaling (matching 04.1_classification_decision_tree.py)
-    model = DecisionTreeClassifier(max_depth=4, random_state=42)
-    model.fit(X_train, y_train)
+    suffix = _get_suffix(dataset_name)
+    
+    model = load_model_if_exists(f"model_dt_classification_{suffix}.pkl")
+    if model is None:
+        model = DecisionTreeClassifier(max_depth=4, random_state=42)
+        model.fit(X_train, y_train)
+        
     y_pred = model.predict(X_test)
-
     metrics = _compute_metrics(y_test, y_pred)
     importance = dict(zip(FEATURE_COLUMNS, model.feature_importances_.round(4).tolist()))
     return metrics, importance, model
 
 
-@st.cache_data(show_spinner="Loading SVM...")
-def run_svm(df_clustered: pd.DataFrame) -> tuple[dict, dict, SVC, StandardScaler]:
-    """Support Vector Machine (SVM) classifier (Z-score scaled, class_weight='balanced')."""
+@st.cache_data(show_spinner="Running SVM...")
+def run_svm(df_clustered: pd.DataFrame, dataset_name: str) -> tuple[dict, dict, SVC, StandardScaler]:
+    """Support Vector Machine (SVM) classifier."""
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
+    suffix = _get_suffix(dataset_name)
     
-    # Try to load pre-trained models from the repository
-    model = load_model_if_exists("model_svm_classification.pkl")
-    scaler = load_model_if_exists("scaler_svm.pkl")
+    model = load_model_if_exists(f"model_svm_classification_{suffix}.pkl")
+    scaler = load_model_if_exists(f"scaler_svm_{suffix}.pkl")
     
-    # Check if the loaded model is compatible with the target dataset (same number of features and samples)
-    # The pre-trained model from the repo was trained on the QLDE dataset with 4335 rows.
-    use_pretrained = (
-        model is not None 
-        and scaler is not None 
-        and len(df_clustered) == 4335
-    )
-    
-    if use_pretrained:
-        # Use exact pre-trained scaler and model from repository
-        X_train_scaled = scaler.transform(X_train)
+    if model is not None and scaler is not None:
         X_test_scaled = scaler.transform(X_test)
     else:
-        # Fallback to dynamic training if using a different dataset or model not found
         scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train)
+        X_train_scaled = scaler.fit_transform(X_train[:2000])
         X_test_scaled = scaler.transform(X_test)
-
-        # Limit training data to 2000 samples to keep training fast, matching the notebooks
-        X_train_svm = X_train_scaled[:2000]
-        y_train_svm = y_train[:2000]
-
         model = SVC(kernel='rbf', probability=True, random_state=42, class_weight='balanced')
-        model.fit(X_train_svm, y_train_svm)
-
+        model.fit(X_train_scaled, y_train[:2000])
+        
     y_pred = model.predict(X_test_scaled)
     metrics = _compute_metrics(y_test, y_pred)
     
-    # Permutation importance for SVM feature importance
+    perm_importance = permutation_importance(model, X_test_scaled, y_test, random_state=42, n_repeats=5)
+    importances = np.abs(perm_importance.importances_mean)
+    if np.sum(importances) > 0:
+        importances /= np.sum(importances)
+    importance_dict = dict(zip(FEATURE_COLUMNS, importances.round(4).tolist()))
+    return metrics, importance_dict, model, scaler
+
+
+@st.cache_data(show_spinner="Running AdaBoost...")
+def run_adaboost(df_clustered: pd.DataFrame, dataset_name: str) -> tuple[dict, dict, AdaBoostClassifier]:
+    """AdaBoost classifier."""
+    from sklearn.ensemble import AdaBoostClassifier
+    X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
+    suffix = _get_suffix(dataset_name)
+    
+    model = load_model_if_exists(f"model_adaboost_classification_{suffix}.pkl")
+    if model is None:
+        model = AdaBoostClassifier(random_state=42)
+        model.fit(X_train, y_train)
+        
+    y_pred = model.predict(X_test)
+    metrics = _compute_metrics(y_test, y_pred)
+    importance = dict(zip(FEATURE_COLUMNS, model.feature_importances_.round(4).tolist()))
+    return metrics, importance, model
+
+
+@st.cache_data(show_spinner="Running ANN...")
+def run_ann(df_clustered: pd.DataFrame, dataset_name: str) -> tuple[dict, dict, MLPClassifier, StandardScaler]:
+    """Artificial Neural Network (ANN) classifier."""
+    from sklearn.neural_network import MLPClassifier
+    X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
+    suffix = _get_suffix(dataset_name)
+    
+    model = load_model_if_exists(f"model_ann_classification_{suffix}.pkl")
+    scaler = load_model_if_exists(f"scaler_ann_{suffix}.pkl")
+    
+    if model is not None and scaler is not None:
+        X_test_scaled = scaler.transform(X_test)
+    else:
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+        model = MLPClassifier(hidden_layer_sizes=(100,), max_iter=500, random_state=42)
+        model.fit(X_train_scaled, y_train)
+        
+    y_pred = model.predict(X_test_scaled)
+    metrics = _compute_metrics(y_test, y_pred)
+    
     perm_importance = permutation_importance(model, X_test_scaled, y_test, random_state=42, n_repeats=5)
     importances = np.abs(perm_importance.importances_mean)
     if np.sum(importances) > 0:
@@ -272,9 +326,11 @@ def run_svm(df_clustered: pd.DataFrame) -> tuple[dict, dict, SVC, StandardScaler
 
 @st.cache_data(show_spinner="Running cross-dataset classification comparison...")
 def run_cross_dataset_comparison() -> pd.DataFrame:
-    """Replicates 04.5_classification_comparison.py across all 5 clustering datasets."""
+    """Replicates 04.4_classification_comparison.ipynb across all 3 focused clustering datasets."""
     import time
     from sklearn.model_selection import cross_val_score
+    from sklearn.ensemble import AdaBoostClassifier
+    from sklearn.neural_network import MLPClassifier
     
     tabel_hasil = []
     
@@ -289,7 +345,12 @@ def run_cross_dataset_comparison() -> pd.DataFrame:
         
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
         
-        # Decision Tree (depth=4)
+        # Scaling full for ANN
+        scaler_full = StandardScaler()
+        X_train_scaled_full = scaler_full.fit_transform(X_train)
+        X_test_scaled_full = scaler_full.transform(X_test)
+        
+        # 1. Decision Tree (DT)
         model_dt = DecisionTreeClassifier(random_state=42, max_depth=4)
         mulai_dt = time.time()
         val_acc_dt = cross_val_score(model_dt, X_train, y_train, cv=5).mean() * 100
@@ -305,17 +366,17 @@ def run_cross_dataset_comparison() -> pd.DataFrame:
             'Time(second)': round(selesai_dt - mulai_dt, 4)
         })
         
-        # Kernel SVM
+        # 2. Kernel SVM (KSVM)
         X_train_svm, y_train_svm = X_train[:2000], y_train[:2000]
-        scaler = StandardScaler()
-        X_train_scaled = scaler.fit_transform(X_train_svm)
-        X_test_scaled = scaler.transform(X_test)
+        scaler_svm = StandardScaler()
+        X_train_scaled_svm = scaler_svm.fit_transform(X_train_svm)
+        X_test_scaled_svm = scaler_svm.transform(X_test)
         
         model_svm = SVC(kernel='rbf', random_state=42, class_weight='balanced')
         mulai_svm = time.time()
-        val_acc_svm = cross_val_score(model_svm, X_train_scaled, y_train_svm, cv=5).mean() * 100
-        model_svm.fit(X_train_scaled, y_train_svm)
-        test_acc_svm = accuracy_score(y_test, model_svm.predict(X_test_scaled)) * 100
+        val_acc_svm = cross_val_score(model_svm, X_train_scaled_svm, y_train_svm, cv=5).mean() * 100
+        model_svm.fit(X_train_scaled_svm, y_train_svm)
+        test_acc_svm = accuracy_score(y_test, model_svm.predict(X_test_scaled_svm)) * 100
         selesai_svm = time.time()
         
         tabel_hasil.append({
@@ -325,9 +386,41 @@ def run_cross_dataset_comparison() -> pd.DataFrame:
             'Test Set Accuracy (%)': round(test_acc_svm, 2),
             'Time(second)': round(selesai_svm - mulai_svm, 4)
         })
-        
-    return pd.DataFrame(tabel_hasil)
 
+        # 3. AdaBoost
+        model_ada = AdaBoostClassifier(random_state=42)
+        mulai_ada = time.time()
+        val_acc_ada = cross_val_score(model_ada, X_train, y_train, cv=5).mean() * 100
+        model_ada.fit(X_train, y_train)
+        test_acc_ada = accuracy_score(y_test, model_ada.predict(X_test)) * 100
+        selesai_ada = time.time()
+        
+        tabel_hasil.append({
+            'Dataset': nama_metode,
+            'Method': 'AdaBoost',
+            'Validation Mean Accuracy (%)': round(val_acc_ada, 2),
+            'Test Set Accuracy (%)': round(test_acc_ada, 2),
+            'Time(second)': round(selesai_ada - mulai_ada, 4)
+        })
+
+        # 4. Artificial Neural Network (ANN)
+        model_ann = MLPClassifier(hidden_layer_sizes=(100,), max_iter=500, random_state=42)
+        mulai_ann = time.time()
+        val_acc_ann = cross_val_score(model_ann, X_train_scaled_full, y_train, cv=5).mean() * 100
+        model_ann.fit(X_train_scaled_full, y_train)
+        test_acc_ann = accuracy_score(y_test, model_ann.predict(X_test_scaled_full)) * 100
+        selesai_ann = time.time()
+        
+        tabel_hasil.append({
+            'Dataset': nama_metode,
+            'Method': 'Artificial Neural Network (ANN)',
+            'Validation Mean Accuracy (%)': round(val_acc_ann, 2),
+            'Test Set Accuracy (%)': round(test_acc_ann, 2),
+            'Time(second)': round(selesai_ann - mulai_ann, 4)
+        })
+        
+    df_res = pd.DataFrame(tabel_hasil)
+    return df_res.sort_values(by=['Dataset', 'Method']).reset_index(drop=True)
 
 
 def load_model_if_exists(filename: str):

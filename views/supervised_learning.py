@@ -1,6 +1,6 @@
 """
 views/supervised_learning.py
-Supervised Learning Page — Compares Decision Tree and SVM classifiers across multiple clustering datasets and provides an interactive prediction form.
+Supervised Learning Page — Compares Decision Tree, SVM, AdaBoost, and ANN classifiers across multiple clustering datasets and provides an interactive prediction form.
 """
 
 import streamlit as st
@@ -15,6 +15,8 @@ from utils.data_loader import load_clean_data, COLUMN_MAPPING, FEATURE_COLUMNS, 
 from utils.mock_models import (
     run_decision_tree,
     run_svm,
+    run_adaboost,
+    run_ann,
     run_cross_dataset_comparison,
     _prep_classification_data,
     FILE_DATASETS,
@@ -56,14 +58,16 @@ def show_supervised_learning():
         combination_options = [
             "QLDE & Decision Tree",
             "QLDE & SVM",
+            "QLDE & AdaBoost",
+            "QLDE & ANN",
             "STANDARD & Decision Tree",
             "STANDARD & SVM",
+            "STANDARD & AdaBoost",
+            "STANDARD & ANN",
             "DE & Decision Tree",
             "DE & SVM",
-            "PSO & Decision Tree",
-            "PSO & SVM",
-            "EOA & Decision Tree",
-            "EOA & SVM"
+            "DE & AdaBoost",
+            "DE & ANN"
         ]
         
         selected_combo = st.selectbox(
@@ -78,17 +82,17 @@ def show_supervised_learning():
             selected_dataset = "QLDE (Paper)"
         elif "STANDARD" in selected_combo:
             selected_dataset = "STANDARD (Baseline)"
-        elif "DE" in selected_combo:
-            selected_dataset = "DE"
-        elif "PSO" in selected_combo:
-            selected_dataset = "PSO"
         else:
-            selected_dataset = "EOA"
+            selected_dataset = "DE"
             
         if "Decision Tree" in selected_combo:
             selected_algo = "Decision Tree"
-        else:
+        elif "SVM" in selected_combo:
             selected_algo = "SVM"
+        elif "AdaBoost" in selected_combo:
+            selected_algo = "AdaBoost"
+        else:
+            selected_algo = "ANN"
             
         st.markdown("---")
         st.caption(f"Target: {selected_dataset} | Model: {selected_algo}")
@@ -97,20 +101,19 @@ def show_supervised_learning():
     df_clustered = load_selected_labeled_data(selected_dataset)
 
     # ── Train Classifiers and Collect Metrics ─────────────────────────────────────
-    with st.spinner(f"Loading/Training models on {selected_dataset}..."):
-        dt_metrics, dt_importance, dt_model = run_decision_tree(df_clustered)
-        svm_metrics, svm_importance, svm_model, svm_scaler = run_svm(df_clustered)
-
-    # Prepare classifier results
-    classifier_results = {
-        "Decision Tree": {"metrics": dt_metrics, "importance": dt_importance, "model": dt_model},
-        "SVM": {"metrics": svm_metrics, "importance": svm_importance, "model": svm_model},
-    }
+    with st.spinner(f"Loading/Training {selected_algo} model on {selected_dataset}..."):
+        if selected_algo == "Decision Tree":
+            metrics, importance, model = run_decision_tree(df_clustered, selected_dataset)
+        elif selected_algo == "SVM":
+            metrics, importance, model, scaler = run_svm(df_clustered, selected_dataset)
+        elif selected_algo == "AdaBoost":
+            metrics, importance, model = run_adaboost(df_clustered, selected_dataset)
+        else: # ANN
+            metrics, importance, model, scaler = run_ann(df_clustered, selected_dataset)
 
     # ── 4 Metric Cards for selected classifier ────────────────────────────────────
     st.markdown(f'<div class="sl">{selected_algo} Metrics on {selected_dataset} Labels</div>', unsafe_allow_html=True)
 
-    metrics = classifier_results[selected_algo]["metrics"]
     card_class = "mc-highlight"
 
     metric_list = [
@@ -137,11 +140,14 @@ def show_supervised_learning():
     # Compute actual confusion matrix for detail view
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
     
-    if selected_algo == "Decision Tree":
-        y_pred = dt_model.predict(X_test)
-    else:
-        X_test_scaled = svm_scaler.transform(X_test)
-        y_pred = svm_model.predict(X_test_scaled)
+    if selected_algo in ["Decision Tree", "AdaBoost"]:
+        y_pred = model.predict(X_test)
+    elif selected_algo == "SVM":
+        X_test_scaled = scaler.transform(X_test)
+        y_pred = model.predict(X_test_scaled)
+    else: # ANN
+        X_test_scaled = scaler.transform(X_test)
+        y_pred = model.predict(X_test_scaled)
         
     cm = confusion_matrix(y_test, y_pred).tolist()
     labels = [CLUSTER_NAMES[c] for c in sorted(np.unique(y_train))]
@@ -152,7 +158,6 @@ def show_supervised_learning():
 
     with col_det2:
         st.markdown('<div class="sl">Feature Importance Scores</div>', unsafe_allow_html=True)
-        importance = classifier_results[selected_algo]["importance"]
         st.plotly_chart(
             plot_feature_importance(importance, f"{selected_algo} — Feature Importance"),
             use_container_width=True
@@ -162,7 +167,7 @@ def show_supervised_learning():
     if selected_algo == "Decision Tree":
         st.markdown("---")
         st.markdown('<div class="sl">Decision Tree Logical Business Rules (Aturan Bisnis)</div>', unsafe_allow_html=True)
-        rules_text = export_text(dt_model, feature_names=FEATURE_COLUMNS)
+        rules_text = export_text(model, feature_names=FEATURE_COLUMNS)
         st.markdown("The following nested conditional logic shows the business rules extracted from the Decision Tree model:")
         st.code(rules_text, language="text")
 
@@ -219,19 +224,31 @@ def show_supervised_learning():
             # Predict and calculate probabilities
             input_arr = input_data[FEATURE_COLUMNS].values
             
-            if selected_algo == "Decision Tree":
-                pred_cluster = int(dt_model.predict(input_arr)[0])
-                pred_proba = dt_model.predict_proba(input_arr)[0]
-                classes = dt_model.classes_
-            else:
-                input_scaled = svm_scaler.transform(input_arr)
-                pred_cluster = int(svm_model.predict(input_scaled)[0])
-                classes = svm_model.classes_
-                # Check if model has probability capability
-                if getattr(svm_model, "probability", False):
-                    pred_proba = svm_model.predict_proba(input_scaled)[0]
+            if selected_algo in ["Decision Tree", "AdaBoost"]:
+                pred_cluster = int(model.predict(input_arr)[0])
+                pred_proba = model.predict_proba(input_arr)[0]
+                classes = model.classes_
+            elif selected_algo == "SVM":
+                input_scaled = scaler.transform(input_arr)
+                pred_cluster = int(model.predict(input_scaled)[0])
+                classes = model.classes_
+                if getattr(model, "probability", False):
+                    pred_proba = model.predict_proba(input_scaled)[0]
                 else:
-                    # Fallback for SVC without probability calibration
+                    pred_proba = np.zeros(len(classes))
+                    try:
+                        pred_idx = np.where(classes == pred_cluster)[0][0]
+                        pred_proba[pred_idx] = 1.0
+                    except IndexError:
+                        if len(classes) > 0:
+                            pred_proba[0] = 1.0
+            else: # ANN
+                input_scaled = scaler.transform(input_arr)
+                pred_cluster = int(model.predict(input_scaled)[0])
+                classes = model.classes_
+                if hasattr(model, "predict_proba"):
+                    pred_proba = model.predict_proba(input_scaled)[0]
+                else:
                     pred_proba = np.zeros(len(classes))
                     try:
                         pred_idx = np.where(classes == pred_cluster)[0][0]
