@@ -1,4 +1,5 @@
-# === Cell 1 ===import pandas as pd
+# === Cell 1 ===
+import pandas as pd
 import joblib
 import os
 from sklearn.model_selection import train_test_split
@@ -29,4 +30,5 @@ print(classification_report(y_test, prediksi_adaboost))
 os.makedirs('../models', exist_ok=True)
 joblib.dump(model_adaboost, '../models/model_adaboost_classification_de.pkl')
 print("\n[SUCCESS] Model AdaBoost diekspor ke '../models/model_adaboost_classification_de.pkl'")
+
 

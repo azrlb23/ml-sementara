@@ -1,4 +1,5 @@
-# === Cell 1 ===import joblib
+# === Cell 1 ===
+import joblib
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
@@ -33,4 +34,5 @@ print(aturan_bisnis)
 os.makedirs('../models', exist_ok=True)
 joblib.dump(model_dt_qlde, '../models/model_dt_classification_qlde.pkl')
 print("\n[SUCCESS] Model Decision Tree diekspor ke '../models/model_dt_classification_qlde.pkl'")
+
 

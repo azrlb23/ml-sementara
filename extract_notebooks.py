@@ -2,8 +2,8 @@ import json
 import os
 import glob
 
-notebooks_dir = r"d:\Machine Learning\segmentation-web\temp_repo\notebooks"
-output_dir = r"d:\Machine Learning\segmentation-web\extracted_code"
+notebooks_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "notebooks")
+output_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "extracted_code")
 os.makedirs(output_dir, exist_ok=True)
 
 # Clear existing .py files in output directory to avoid stale files
@@ -31,12 +31,16 @@ for nb_file in notebook_files:
     cell_idx = 1
     for cell in nb_data.get("cells", []):
         if cell.get("cell_type") == "code":
-            code_lines.append(f"# === Cell {cell_idx} ===")
+            code_lines.append(f"# === Cell {cell_idx} ===\n")
             source = cell.get("source", [])
             if isinstance(source, list):
-                code_lines.extend(source)
+                cell_code = "".join(source)
             else:
-                code_lines.append(source)
+                cell_code = source
+            
+            if not cell_code.endswith("\n"):
+                cell_code += "\n"
+            code_lines.append(cell_code)
             code_lines.append("\n\n")
             cell_idx += 1
             

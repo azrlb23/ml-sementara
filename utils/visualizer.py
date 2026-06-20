@@ -95,12 +95,14 @@ def plot_rfm_distribution(df: pd.DataFrame) -> go.Figure:
             row=1, col=i,
         )
 
-    layout_dict = BASE_LAYOUT.copy()
+    layout_dict = {k: v for k, v in BASE_LAYOUT.items() if k not in ["xaxis", "yaxis"]}
     layout_dict.update(
         title="RFM Feature Distributions",
         height=350,
     )
     fig.update_layout(layout_dict)
+    fig.update_xaxes(showgrid=False, color="#808080", tickfont=dict(family="JetBrains Mono, monospace", size=10))
+    fig.update_yaxes(showgrid=True, gridcolor="#1c1c1c", zeroline=False, color="#808080", tickfont=dict(family="JetBrains Mono, monospace", size=10))
     fig.update_traces(marker_line_color="rgba(0,0,0,0.5)", marker_line_width=0.5)
     return fig
 
@@ -118,9 +120,11 @@ def plot_extended_features(df: pd.DataFrame) -> go.Figure:
                          nbinsx=30, showlegend=False),
             row=1, col=i,
         )
-    layout_dict = BASE_LAYOUT.copy()
+    layout_dict = {k: v for k, v in BASE_LAYOUT.items() if k not in ["xaxis", "yaxis"]}
     layout_dict.update(title="Extended Feature Distributions", height=320)
     fig.update_layout(layout_dict)
+    fig.update_xaxes(showgrid=False, color="#808080", tickfont=dict(family="JetBrains Mono, monospace", size=10))
+    fig.update_yaxes(showgrid=True, gridcolor="#1c1c1c", zeroline=False, color="#808080", tickfont=dict(family="JetBrains Mono, monospace", size=10))
     return fig
 
 
@@ -192,7 +196,7 @@ def plot_all_features_distributions(df: pd.DataFrame, features: list[str], scale
             row=r, col=c,
         )
 
-    layout_dict = BASE_LAYOUT.copy()
+    layout_dict = {k: v for k, v in BASE_LAYOUT.items() if k not in ["xaxis", "yaxis"]}
     title_text = "Distribusi 11 Fitur Pelanggan (Setelah Z-Score Normalization)" if scaled else "Distribusi 11 Fitur Pelanggan (Nilai Mentah, clip p99)"
     layout_dict.update(
         title=title_text,
@@ -200,6 +204,8 @@ def plot_all_features_distributions(df: pd.DataFrame, features: list[str], scale
         margin=dict(l=40, r=20, t=80, b=40)
     )
     fig.update_layout(layout_dict)
+    fig.update_xaxes(showgrid=False, color="#808080", tickfont=dict(family="JetBrains Mono, monospace", size=10))
+    fig.update_yaxes(showgrid=True, gridcolor="#1c1c1c", zeroline=False, color="#808080", tickfont=dict(family="JetBrains Mono, monospace", size=10))
     fig.update_traces(marker_line_color="rgba(0,0,0,0.5)", marker_line_width=0.5)
     return fig
 
@@ -339,44 +345,80 @@ def plot_cluster_bar(df: pd.DataFrame, cluster_col: str = "Cluster") -> go.Figur
 
 def plot_algorithm_comparison(metrics: dict) -> go.Figure:
     """
-    Bar chart comparing algorithms by metric.
+    Grouped bar chart comparing algorithms across all metrics.
     `metrics` format: {"Algorithm1": {"Metric1": Val, ...}, "Algorithm2": {...}, ...}
-    Includes hatch patterns for premium styling.
+    Uses a single shared chart — metrics on x-axis, algorithms as grouped bars.
+    Values are normalized per-metric to [0,1] so all 4 metrics share one y-axis.
+    Hover shows the real original values.
     """
     algo_names = list(metrics.keys())
     metric_names = list(next(iter(metrics.values())).keys())
-    
-    # Custom colors and hatch patterns for 5 algorithms (using Index design palette)
-    colors = ["#4d4d4d", "#808080", "#ababab", "#ffffff", "#7089ba"]
-    patterns = ["", "/", "\\", "x", "."]
 
-    fig = make_subplots(
-        rows=1, cols=len(metric_names),
-        subplot_titles=metric_names,
-    )
-    
-    for j, metric in enumerate(metric_names, start=1):
-        for i, algo in enumerate(algo_names):
-            val = metrics[algo].get(metric, 0)
-            fig.add_trace(
-                go.Bar(
-                    x=[algo], y=[val],
-                    marker=dict(
-                        color=colors[i % len(colors)],
-                        pattern=dict(shape=patterns[i % len(patterns)], solidity=0.3)
-                    ),
-                    name=algo,
-                    showlegend=(j == 1), # only show in legend once
-                    text=f"{val:.3f}" if val < 100 else f"{val:.0f}",
-                    textposition="outside",
-                ),
-                row=1, col=j,
-            )
-            
-    layout_dict = BASE_LAYOUT.copy()
+    # Normalize per metric so they're comparable on a shared y-axis
+    raw = {m: [metrics[a].get(m, 0) for a in algo_names] for m in metric_names}
+    norm = {}
+    for m, vals in raw.items():
+        mn, mx = min(vals), max(vals)
+        span = mx - mn if mx != mn else 1.0
+        norm[m] = [(v - mn) / span for v in vals]
+
+    # Colors: one per algorithm
+    algo_colors = ["#4d4d4d", "#808080", "#7089ba"]
+
+    fig = go.Figure()
+
+    for i, algo in enumerate(algo_names):
+        norm_vals = [norm[m][i] for m in metric_names]
+        raw_vals  = [raw[m][i]  for m in metric_names]
+        hover_texts = [
+            f"<b>{algo}</b><br>{m}: {rv:.4g}"
+            for m, rv in zip(metric_names, raw_vals)
+        ]
+        fig.add_trace(go.Bar(
+            name=algo,
+            x=metric_names,
+            y=norm_vals,
+            marker=dict(
+                color=algo_colors[i % len(algo_colors)],
+                line=dict(width=0),          # no border lines on bars
+            ),
+            text=[f"{rv:.4g}" for rv in raw_vals],
+            textposition="outside",
+            textfont=dict(size=9, family="JetBrains Mono, monospace", color="#cccccc"),
+            hovertext=hover_texts,
+            hoverinfo="text",
+        ))
+
+    layout_dict = {k: v for k, v in BASE_LAYOUT.items() if k not in ["xaxis", "yaxis"]}
     layout_dict.update(
-        title="Algorithm Performance Comparison",
-        height=380,
+        title=None,
+        barmode="group",
+        bargap=0.22,
+        bargroupgap=0.06,
+        height=370,
+        margin=dict(t=50, b=60, l=30, r=10),
+        xaxis=dict(
+            showgrid=False,
+            zeroline=False,
+            color="#808080",
+            tickfont=dict(family="JetBrains Mono, monospace", size=10),
+            tickangle=0,
+        ),
+        yaxis=dict(
+            showgrid=False,          # no horizontal grid lines
+            zeroline=False,
+            showticklabels=False,    # hide normalized y ticks — real values shown in labels
+            color="#808080",
+            range=[-0.05, 1.35],     # leave headroom for outside labels
+        ),
+        legend=dict(
+            orientation="h",
+            x=0.5, xanchor="center",
+            y=1.12, yanchor="top",
+            font=dict(size=10, family=FONT_FAMILY),
+            bgcolor="rgba(0,0,0,0)",
+            borderwidth=0,
+        ),
     )
     fig.update_layout(layout_dict)
     return fig
@@ -408,10 +450,11 @@ def plot_convergence_curve(df_conv: pd.DataFrame) -> go.Figure:
         
     layout_dict = BASE_LAYOUT.copy()
     layout_dict.update(
-        title="Centroid Optimization Convergence (SSE vs Iteration)",
+        title=None, # Disable internal title to prevent Streamlit heading collision
         xaxis_title="Iteration",
         yaxis_title="SSE",
-        height=400,
+        height=340,
+        margin=dict(t=40, b=50, l=50, r=10)
     )
     fig.update_layout(layout_dict)
     return fig

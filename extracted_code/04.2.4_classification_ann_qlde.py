@@ -1,4 +1,5 @@
-# === Cell 1 ===import pandas as pd
+# === Cell 1 ===
+import pandas as pd
 import joblib
 import os
 from sklearn.model_selection import train_test_split
@@ -37,4 +38,5 @@ os.makedirs('../models', exist_ok=True)
 joblib.dump(scaler_ann, '../models/scaler_ann_qlde.pkl')
 joblib.dump(model_ann, '../models/model_ann_classification_qlde.pkl')
 print("\n[SUCCESS] Scaler & Model ANN diekspor ke folder '../models/'!")
+
 

@@ -1,4 +1,5 @@
-# === Cell 1 ===# ============================================================
+# === Cell 1 ===
+# ============================================================
 # Import library esensial
 # ============================================================
 import pandas as pd
@@ -20,7 +21,8 @@ plt.rcParams['font.size']  = 11
 print("Library berhasil diimport.")
 
 
-# === Cell 2 ===# ============================================================
+# === Cell 2 ===
+# ============================================================
 # Memuat dataset
 # Pastikan path disesuaikan dengan struktur repositori
 # Dataset: Kaggle E-Commerce Customer Segmentation
@@ -36,7 +38,8 @@ print(df.isnull().sum().to_string())
 df.head()
 
 
-# === Cell 3 ===# --- Step 1: Hapus CustomerID kosong ---
+# === Cell 3 ===
+# --- Step 1: Hapus CustomerID kosong ---
 df_clean = df.dropna(subset=['CustomerID']).copy()
 df_clean['InvoiceNo']   = df_clean['InvoiceNo'].astype(str)
 df_clean['InvoiceDate'] = pd.to_datetime(df_clean['InvoiceDate'])
@@ -58,7 +61,8 @@ print(f"  Setelah filter StockCode  : {n_after_stock:>8,}  (dihapus: {n_after_ci
 print(f"  Total baris dihapus       : {n_before - n_after_stock:>8,} ({(n_before - n_after_stock)/n_before*100:.1f}%)")
 
 
-# === Cell 4 ===# ============================================================
+# === Cell 4 ===
+# ============================================================
 # Ekstraksi Var 10 (CancelFrequency) dari df_clean
 # Justifikasi: df_clean masih mengandung transaksi cancel (prefix 'C')
 # yang merupakan perilaku behavioral pelanggan yang ingin ditangkap
@@ -130,7 +134,8 @@ print(f"\nStatistik deskriptif (nilai mentah):")
 customer_df.describe().round(2)
 
 
-# === Cell 5 ===# ============================================================
+# === Cell 5 ===
+# ============================================================
 # Z-Score Normalization — Persamaan (14) paper
 # X = (Xo - mu) / sigma
 # ============================================================
@@ -164,7 +169,8 @@ print(f"\nShape data ternormalisasi: {scaled_df.shape}")
 scaled_df.describe().round(4)
 
 
-# === Cell 6 ===# ============================================================
+# === Cell 6 ===
+# ============================================================
 # Matriks Korelasi antar Fitur Pelanggan
 # Sesuai Gambar 7 pada paper (Section 4.1)
 # ============================================================
@@ -203,7 +209,8 @@ else:
     print("\nTidak ada pasangan fitur dengan |r| > 0.6")
 
 
-# === Cell 7 ===# ============================================================
+# === Cell 7 ===
+# ============================================================
 # PCA — Fit pada semua komponen terlebih dahulu
 # untuk menentukan jumlah komponen optimal
 # Sesuai Section 3.1 dan Gambar 8a paper
@@ -262,7 +269,8 @@ for i, v in enumerate(explained_var):
     print(f"  PC-{i+1:2d}  : {v:6.2f}%   kumulatif: {cum:6.2f}%{mark}")
 
 
-# === Cell 8 ===# ============================================================
+# === Cell 8 ===
+# ============================================================
 # Terapkan PCA dengan jumlah komponen optimal (n_comp_90)
 # Sesuai kriteria paper: komponen yang menjelaskan ≥ 90% variance kumulatif
 # ============================================================
@@ -285,7 +293,8 @@ for i, v in enumerate(pca_selected.explained_variance_ratio_):
 pca_df.head()
 
 
-# === Cell 9 ===# ============================================================
+# === Cell 9 ===
+# ============================================================
 # Gambar 8b: Kontribusi Variabel Asli pada PCA (Loading Matrix)
 # Sesuai paper: "principal components effectively represent
 # the various characteristics of the original customers"
@@ -320,7 +329,8 @@ print("\nLoading matrix (kontribusi variabel asli ke setiap PC):")
 print(loadings_df.to_string())
 
 
-# === Cell 10 ===# ============================================================
+# === Cell 10 ===
+# ============================================================
 # EDA: Distribusi 11 Fitur (sebelum normalisasi — nilai mentah)
 # ============================================================
 fig, axes = plt.subplots(4, 3, figsize=(16, 14))
@@ -351,7 +361,8 @@ plt.tight_layout()
 plt.show()
 
 
-# === Cell 11 ===# ============================================================
+# === Cell 11 ===
+# ============================================================
 # EDA: Distribusi 11 Fitur SETELAH Z-Score Normalization
 # Memverifikasi bahwa normalisasi berjalan benar (mean≈0, std≈1)
 # ============================================================
@@ -380,7 +391,8 @@ plt.tight_layout()
 plt.show()
 
 
-# === Cell 12 ===# ============================================================
+# === Cell 12 ===
+# ============================================================
 # EDA: Visualisasi 2D pada dua PC pertama
 # Proyeksi data pelanggan ke ruang komponen utama
 # ============================================================
@@ -401,7 +413,8 @@ print(f"Total variance dijelaskan oleh PCA 1 + PCA 2: "
       f"{sum(pca_selected.explained_variance_ratio_[:2])*100:.2f}%")
 
 
-# === Cell 13 ===# ============================================================
+# === Cell 13 ===
+# ============================================================
 # Export hasil preprocessing untuk tahap clustering
 # ============================================================
 import os, joblib
@@ -419,7 +432,7 @@ scaled_df.to_csv('../data/processed/customer_features_scaled.csv')
 pca_df.to_csv('../data/processed/customer_features_pca.csv')
 
 # 4. Simpan scaler dan PCA object untuk deployment
-joblib.dump(scaler,       '../models/standard_scaler.pkl')
+joblib.dump(pt, '../models/power_transformer.pkl')
 joblib.dump(pca_selected, '../models/pca_model.pkl')
 
 print("=== Export Selesai ===")

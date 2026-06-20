@@ -1,4 +1,5 @@
-# === Cell 1 ===# ============================================================
+# === Cell 1 ===
+# ============================================================
 # Import Libraries
 # ============================================================
 import os
@@ -34,7 +35,9 @@ print('Libraries berhasil diimport.')
 print(f'NumPy  : {np.__version__}')
 print(f'Pandas : {pd.__version__}')
 
-# === Cell 2 ===# ============================================================
+
+# === Cell 2 ===
+# ============================================================
 # Load Data
 # ============================================================
 df_pca    = pd.read_csv('../data/processed/customer_features_pca.csv', index_col='CustomerID')
@@ -54,7 +57,9 @@ X_raw    = df_raw.values       # shape: (4335, 11)
 print(f'\nX_pca shape   : {X_pca.shape}')
 print(f'X_scaled shape: {X_scaled.shape}')
 
-# === Cell 3 ===# ============================================================
+
+# === Cell 3 ===
+# ============================================================
 # Elbow Method — menghitung SSE untuk K = 2..12
 # (menggunakan X_pca sesuai Section 4.2 paper)
 # ============================================================
@@ -106,7 +111,9 @@ plt.savefig('../models/elbow_method.png', bbox_inches='tight', dpi=150)
 plt.show()
 print(f'\nK=6 dipilih: SSE={sse_list[4]:,.2f} | Silhouette={sil_list[4]:.4f}')
 
-# === Cell 4 ===# ============================================================
+
+# === Cell 4 ===
+# ============================================================
 # Implementasi Algoritma QLDE
 # Wang, G. (2025) — Section 3.3
 # ============================================================
@@ -351,7 +358,9 @@ print('  - Q-learning: α=0.1, γ=0.9, ε=0.2')
 print('  - Actions λ: {-0.01, 0, 0.01}')
 print('  - Reward: R=1 jika fitness membaik, R=0 jika tidak')
 
-# === Cell 5 ===# ============================================================
+
+# === Cell 5 ===
+# ============================================================
 # Jalankan K-means-QLDE dengan K=6
 # Sesuai Section 4.2 paper
 # ============================================================
@@ -397,7 +406,9 @@ df_pca['Cluster']    = qlde.labels_
 df_scaled['Cluster'] = qlde.labels_
 df_raw['Cluster']    = qlde.labels_
 
-# === Cell 6 ===# ============================================================
+
+# === Cell 6 ===
+# ============================================================
 # Visualisasi 1: Kurva Konvergensi QLDE
 # ============================================================
 fig, ax = plt.subplots(figsize=(10, 5))
@@ -430,7 +441,9 @@ plt.show()
 improvement = (qlde.convergence_curve_[0] - qlde.convergence_curve_[-1]) / qlde.convergence_curve_[0] * 100
 print(f'Perbaikan SSE: {improvement:.2f}%')
 
-# === Cell 7 ===# ============================================================
+
+# === Cell 7 ===
+# ============================================================
 # Visualisasi 2: Proporsi Pelanggan per Cluster
 # Mereplikasi Fig 10 paper
 # ============================================================
@@ -476,7 +489,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_distribution.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 8 ===# ============================================================
+
+# === Cell 8 ===
+# ============================================================
 # Visualisasi 3: Scatter Plot 3D pada PC1, PC2, PC3
 # Mereplikasi Fig 11 paper
 # ============================================================
@@ -526,7 +541,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_3d_scatter.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 9 ===# ============================================================
+
+# === Cell 9 ===
+# ============================================================
 # Visualisasi 4: Heatmap Cluster Centers (11 fitur, Z-score)
 # Mereplikasi konsep Fig 12 paper
 # ============================================================
@@ -576,7 +593,9 @@ plt.show()
 print('\nCluster Centers (Z-score):')
 print(centers_df.round(3).to_string())
 
-# === Cell 10 ===# ============================================================
+
+# === Cell 10 ===
+# ============================================================
 # Visualisasi 5: Radar Chart (Spider Plot) tiap cluster
 # ============================================================
 
@@ -637,7 +656,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_radar.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 11 ===# ============================================================
+
+# === Cell 11 ===
+# ============================================================
 # Evaluasi Metrik Clustering
 # ============================================================
 labels = qlde.labels_
@@ -679,7 +700,9 @@ np.save('../models/qlde_convergence.npy', np.array(qlde.convergence_curve_))
 
 print('\nHasil disimpan untuk perbandingan dengan algoritma lain.')
 
-# === Cell 12 ===# ============================================================
+
+# === Cell 12 ===
+# ============================================================
 # Analisis Karakteristik Cluster
 # ============================================================
 feature_desc_short = {
@@ -730,7 +753,9 @@ for c_name, desc in cluster_descriptions.items():
     print(f'\n{c_name} — {cnt} pelanggan ({pct:.1f}%)')
     print(f'  {desc}')
 
-# === Cell 13 ===# ============================================================
+
+# === Cell 13 ===
+# ============================================================
 # Visualisasi 6: Bar Chart Perbandingan Cluster Centers (Raw)
 # ============================================================
 centers_raw_plot = df_raw.groupby('Cluster')[feature_cols].mean()
@@ -766,7 +791,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_features_comparison.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 14 ===# ============================================================
+
+# === Cell 14 ===
+# ============================================================
 # Simpan Hasil Clustering
 # ============================================================
 import os
@@ -794,4 +821,5 @@ print('  → models/clustering_results_comparison.csv')
 print()
 print('Ringkasan Clustering QLDE:')
 print(df_labeled['Cluster_Label'].value_counts().to_string())
+
 

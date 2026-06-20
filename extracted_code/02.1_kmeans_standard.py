@@ -1,4 +1,5 @@
-# === Cell 1 ===# ============================================================
+# === Cell 1 ===
+# ============================================================
 # Import
 # ============================================================
 import numpy as np
@@ -31,7 +32,9 @@ print(f'Algoritma: Standard K-means | K={K_OPTIMAL}')
 print(f'NumPy  : {np.__version__}')
 print(f'Pandas : {pd.__version__}')
 
-# === Cell 2 ===# ============================================================
+
+# === Cell 2 ===
+# ============================================================
 # Load Data
 # ============================================================
 df_pca    = pd.read_csv('../data/processed/customer_features_pca.csv', index_col='CustomerID')
@@ -50,7 +53,9 @@ X_raw    = df_raw.values
 print(f'\nX_pca shape   : {X_pca.shape}')
 print(f'X_scaled shape: {X_scaled.shape}')
 
-# === Cell 3 ===# ============================================================
+
+# === Cell 3 ===
+# ============================================================
 # Standard K-means
 # ============================================================
 t_start = time.time()
@@ -85,7 +90,9 @@ for c in range(K_OPTIMAL):
     bar = '█' * int(pct / 2)
     print(f'  Cluster {c+1}: {cnt:4d} pelanggan ({pct:.1f}%)  {bar}')
 
-# === Cell 4 ===# ============================================================
+
+# === Cell 4 ===
+# ============================================================
 # Setup labels for visualization
 # ============================================================
 df_pca['Cluster'] = labels
@@ -93,7 +100,8 @@ df_scaled['Cluster'] = labels
 df_raw['Cluster'] = labels
 
 
-# === Cell 5 ===# ============================================================
+# === Cell 5 ===
+# ============================================================
 # Visualisasi 2: Proporsi Pelanggan per Cluster
 # Mereplikasi Fig 10 paper
 # ============================================================
@@ -139,7 +147,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_distribution_kmeans.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 6 ===# ============================================================
+
+# === Cell 6 ===
+# ============================================================
 # Visualisasi 3: Scatter Plot 3D pada PC1, PC2, PC3
 # Mereplikasi Fig 11 paper
 # ============================================================
@@ -189,7 +199,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_3d_scatter_kmeans.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 7 ===# ============================================================
+
+# === Cell 7 ===
+# ============================================================
 # Visualisasi 4: Heatmap Cluster Centers (11 fitur, Z-score)
 # Mereplikasi konsep Fig 12 paper
 # ============================================================
@@ -239,7 +251,9 @@ plt.show()
 print('\nCluster Centers (Z-score):')
 print(centers_df.round(3).to_string())
 
-# === Cell 8 ===# ============================================================
+
+# === Cell 8 ===
+# ============================================================
 # Visualisasi 5: Radar Chart (Spider Plot) tiap cluster
 # ============================================================
 
@@ -300,7 +314,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_radar_kmeans.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 9 ===# ============================================================
+
+# === Cell 9 ===
+# ============================================================
 # Evaluasi Metrik Clustering
 # ============================================================
 labels = model.labels_
@@ -342,7 +358,9 @@ np.save('../models/kmeans-standard_runtime.npy', np.array(t_elapsed))
 
 print('\nHasil disimpan untuk perbandingan dengan algoritma lain.')
 
-# === Cell 10 ===# ============================================================
+
+# === Cell 10 ===
+# ============================================================
 # Analisis Karakteristik Cluster
 # ============================================================
 feature_desc_short = {
@@ -393,7 +411,9 @@ for c_name, desc in cluster_descriptions.items():
     print(f'\n{c_name} — {cnt} pelanggan ({pct:.1f}%)')
     print(f'  {desc}')
 
-# === Cell 11 ===# ============================================================
+
+# === Cell 11 ===
+# ============================================================
 # Visualisasi 6: Bar Chart Perbandingan Cluster Centers (Raw)
 # ============================================================
 centers_raw_plot = df_raw.groupby('Cluster')[feature_cols].mean()
@@ -429,7 +449,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_features_comparison_kmeans.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 12 ===# Dataset berlabel
+
+# === Cell 12 ===
+# Dataset berlabel
 df_labeled = df_raw.copy()
 df_labeled['Cluster_kmeans_standard'] = labels
 

@@ -1,4 +1,5 @@
-# === Cell 1 ===# ============================================================
+# === Cell 1 ===
+# ============================================================
 # Import
 # ============================================================
 import numpy as np
@@ -23,7 +24,9 @@ plt.rcParams['figure.dpi'] = 110
 CLUSTER_COLORS = ['#E63946','#2A9D8F','#E9C46A','#264653','#F4A261','#A8DADC']
 print(f'Algoritma: K-means-PSO | K={K_OPTIMAL}')
 
-# === Cell 2 ===# ============================================================
+
+# === Cell 2 ===
+# ============================================================
 # Load Data
 # ============================================================
 df_pca    = pd.read_csv('../data/processed/customer_features_pca.csv', index_col='CustomerID')
@@ -33,7 +36,9 @@ df_raw    = pd.read_csv('../data/processed/customer_features_raw.csv', index_col
 X_pca = df_pca.values
 print(f'Data: {X_pca.shape} | {len(df_pca):,} pelanggan, 6 PC')
 
-# === Cell 3 ===# ============================================================
+
+# === Cell 3 ===
+# ============================================================
 # Kelas KMeansPSO
 # ============================================================
 class KMeansPSO:
@@ -128,7 +133,9 @@ class KMeansPSO:
 
 print('Kelas KMeansPSO berhasil didefinisikan.')
 
-# === Cell 4 ===# ============================================================
+
+# === Cell 4 ===
+# ============================================================
 # Jalankan K-means-PSO
 # ============================================================
 t_start = time.time()
@@ -158,7 +165,8 @@ print(f'  Davies-Bouldin Index : {db:.4f}')
 print(f'  Calinski-Harabasz    : {ch:.2f}')
 
 
-# === Cell 5 ===# ============================================================
+# === Cell 5 ===
+# ============================================================
 # Visualisasi: Scatter + Kurva Konvergensi
 # ============================================================
 fig, axes = plt.subplots(1, 3, figsize=(21, 6))
@@ -200,7 +208,9 @@ plt.savefig(f'../models/result_{ALGO_NAME}.png', bbox_inches='tight', dpi=150)
 plt.show()
 print(f'✓ Plot disimpan → models/result_{ALGO_NAME}.png')
 
-# === Cell 6 ===# ============================================================
+
+# === Cell 6 ===
+# ============================================================
 # Simpan Hasil Clustering
 # ============================================================
 import os
@@ -215,7 +225,8 @@ df_labeled.to_csv('../data/Labeled/hasildata_kmeans-pso.csv')
 print('File berhasil disimpan: ../data/Labeled/hasildata_kmeans-pso.csv')
 
 
-# === Cell 7 ===# ============================================================
+# === Cell 7 ===
+# ============================================================
 # Setup labels for visualization
 # ============================================================
 df_pca['Cluster'] = labels
@@ -223,7 +234,8 @@ df_scaled['Cluster'] = labels
 df_raw['Cluster'] = labels
 
 
-# === Cell 8 ===# ============================================================
+# === Cell 8 ===
+# ============================================================
 # Visualisasi 1: Kurva Konvergensi K-means-PSO
 # ============================================================
 fig, ax = plt.subplots(figsize=(10, 5))
@@ -256,7 +268,9 @@ plt.show()
 improvement = (model.convergence_curve_[0] - model.convergence_curve_[-1]) / model.convergence_curve_[0] * 100
 print(f'Perbaikan SSE: {improvement:.2f}%')
 
-# === Cell 9 ===# ============================================================
+
+# === Cell 9 ===
+# ============================================================
 # Visualisasi 2: Proporsi Pelanggan per Cluster
 # Mereplikasi Fig 10 paper
 # ============================================================
@@ -302,7 +316,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_distribution_pso.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 10 ===# ============================================================
+
+# === Cell 10 ===
+# ============================================================
 # Visualisasi 3: Scatter Plot 3D pada PC1, PC2, PC3
 # Mereplikasi Fig 11 paper
 # ============================================================
@@ -352,7 +368,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_3d_scatter_pso.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 11 ===# ============================================================
+
+# === Cell 11 ===
+# ============================================================
 # Visualisasi 4: Heatmap Cluster Centers (11 fitur, Z-score)
 # Mereplikasi konsep Fig 12 paper
 # ============================================================
@@ -402,7 +420,9 @@ plt.show()
 print('\nCluster Centers (Z-score):')
 print(centers_df.round(3).to_string())
 
-# === Cell 12 ===# ============================================================
+
+# === Cell 12 ===
+# ============================================================
 # Visualisasi 5: Radar Chart (Spider Plot) tiap cluster
 # ============================================================
 
@@ -463,7 +483,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_radar_pso.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 13 ===# ============================================================
+
+# === Cell 13 ===
+# ============================================================
 # Evaluasi Metrik Clustering
 # ============================================================
 labels = model.labels_
@@ -493,7 +515,9 @@ results_pso = {
 }
 print('\nHasil disimpan untuk perbandingan dengan algoritma lain.')
 
-# === Cell 14 ===# ============================================================
+
+# === Cell 14 ===
+# ============================================================
 # Analisis Karakteristik Cluster
 # ============================================================
 feature_desc_short = {
@@ -544,7 +568,9 @@ for c_name, desc in cluster_descriptions.items():
     print(f'\n{c_name} — {cnt} pelanggan ({pct:.1f}%)')
     print(f'  {desc}')
 
-# === Cell 15 ===# ============================================================
+
+# === Cell 15 ===
+# ============================================================
 # Visualisasi 6: Bar Chart Perbandingan Cluster Centers (Raw)
 # ============================================================
 centers_raw_plot = df_raw.groupby('Cluster')[feature_cols].mean()
@@ -580,7 +606,9 @@ plt.tight_layout()
 plt.savefig('../models/cluster_features_comparison_pso.png', bbox_inches='tight', dpi=150)
 plt.show()
 
-# === Cell 16 ===# Dataset berlabel
+
+# === Cell 16 ===
+# Dataset berlabel
 df_labeled = df_raw.copy()
 df_labeled['Cluster_kmeans_pso'] = labels
 

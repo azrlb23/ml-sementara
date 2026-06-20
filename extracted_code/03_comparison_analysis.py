@@ -1,4 +1,5 @@
-# === Cell 1 ===# ============================================================
+# === Cell 1 ===
+# ============================================================
 # Import
 # ============================================================
 import numpy as np
@@ -10,8 +11,17 @@ import os
 sns.set_theme(style='whitegrid')
 plt.rcParams['figure.dpi'] = 110
 
+# Fallback for display() if run outside Jupyter
+if 'display' not in globals():
+    try:
+        from IPython.display import display
+    except ImportError:
+        def display(obj):
+            print(obj)
 
-# === Cell 2 ===# ============================================================
+
+# === Cell 2 ===
+# ============================================================
 # Fungsi untuk meload metrik dari folder models/
 # ============================================================
 def load_metrics(algo_prefix):
@@ -53,7 +63,9 @@ if not df_comp.empty:
                           .format('{:,.2f}', subset=['SSE', 'CH Index'])
                           .format('{:.2f}', subset=['Runtime (s)']))
 
-# === Cell 3 ===# ============================================================
+
+# === Cell 3 ===
+# ============================================================
 # Visualisasi Bar Chart Perbandingan
 # ============================================================
 if not df_comp.empty:
@@ -105,7 +117,9 @@ if not df_comp.empty:
 else:
     print("Belum ada data untuk divisualisasikan.")
 
-# === Cell 4 ===# ============================================================
+
+# === Cell 4 ===
+# ============================================================
 # Visualisasi Kurva Konvergensi
 # ============================================================
 plt.figure(figsize=(10, 6))
@@ -138,4 +152,5 @@ if plotted:
     print('✓ Plot konvergensi disimpan → models/comparison_convergence.png')
 else:
     print("Belum ada kurva konvergensi yang bisa diload.")
+
 

@@ -1,4 +1,5 @@
-# === Cell 1 ===import pandas as pd
+# === Cell 1 ===
+import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
@@ -111,7 +112,9 @@ for p in grafik.patches:
 plt.tight_layout()
 plt.show()
 
-# === Cell 2 ===import pandas as pd
+
+# === Cell 2 ===
+import pandas as pd
 import time
 import os
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -197,7 +200,9 @@ df_paper_metrics_all = pd.DataFrame(tabel_hasil)
 # Menampilkan tabel komparasi akhir
 df_paper_metrics_all
 
-# === Cell 3 ===import pandas as pd
+
+# === Cell 3 ===
+import pandas as pd
 import time
 import os
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -316,4 +321,5 @@ df_paper_metrics_all = df_paper_metrics_all.sort_values(by=['Dataset', 'Method']
 
 # Menampilkan tabel
 df_paper_metrics_all
+
 

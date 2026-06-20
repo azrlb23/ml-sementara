@@ -1,4 +1,5 @@
-# === Cell 1 ===import pandas as pd
+# === Cell 1 ===
+import pandas as pd
 import joblib
 import os
 from sklearn.model_selection import train_test_split
@@ -38,4 +39,5 @@ os.makedirs('../models', exist_ok=True)
 joblib.dump(scaler, '../models/scaler_svm_standard.pkl')
 joblib.dump(model_svm, '../models/model_svm_classification_standard.pkl')
 print("\n[SUCCESS] Scaler & Model SVM diekspor ke folder '../models/'!")
+
 
