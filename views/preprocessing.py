@@ -11,6 +11,7 @@ from sklearn.decomposition import PCA
 import plotly.express as px
 import plotly.graph_objects as go
 from utils.data_loader import load_clean_data, get_feature_columns, get_feature_labels
+from utils.mock_models import load_model_if_exists
 
 def show_preprocessing():
     # ── Load Data ─────────────────────────────────────────────────────────────────
@@ -64,9 +65,14 @@ def show_preprocessing():
     st.markdown('<div class="sl">Feature Scaling (Z-Score Standardization)</div>', unsafe_allow_html=True)
     st.caption("Standardization ensures all features (Recency, Frequency, Monetary, etc.) have equal weight in distance calculations (Euclidean).")
 
-    # Compute scaled metrics
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(df_raw[features])
+    # Load pre-trained StandardScaler if exists, otherwise train it
+    scaler = load_model_if_exists("standard_scaler.pkl")
+    if scaler is not None:
+        X_scaled = scaler.transform(df_raw[features].values)
+    else:
+        scaler = StandardScaler()
+        X_scaled = scaler.fit_transform(df_raw[features])
+        
     df_scaled = pd.DataFrame(X_scaled, columns=features)
 
     stats_before = df_raw[features].describe().loc[['mean', 'std', 'min', 'max']].T
@@ -87,7 +93,7 @@ def show_preprocessing():
     st.caption("PCA transforms high-dimensional features into orthogonal components, maximizing variance explanation and resolving multi-collinearity.")
 
     with st.spinner("Analyzing PCA components..."):
-        # Fit PCA on full scaled features
+        # Fit PCA on full scaled features for scree plot
         pca_full = PCA(random_state=42)
         pca_full.fit(X_scaled)
         
@@ -128,10 +134,12 @@ def show_preprocessing():
             height=380
         )
         
-        # PCA Heatmap Loading Matrix (6 selected components)
+        # Load PCA selected model from repository if exists
         n_selected = 6
-        pca_selected = PCA(n_components=n_selected, random_state=42)
-        pca_selected.fit(X_scaled)
+        pca_selected = load_model_if_exists("pca_model.pkl")
+        if pca_selected is None:
+            pca_selected = PCA(n_components=n_selected, random_state=42)
+            pca_selected.fit(X_scaled)
         
         # Loadings dataframe
         loadings = pd.DataFrame(

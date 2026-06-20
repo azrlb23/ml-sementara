@@ -51,26 +51,53 @@ def show_supervised_learning():
     # ── Sidebar Controls ──────────────────────────────────────────────────────────
     with st.sidebar:
         st.markdown("## Classifier Settings")
-        selected_dataset = st.selectbox(
-            "Target Labels Source:",
-            ["QLDE (Paper)", "STANDARD (Baseline)", "DE", "PSO", "EOA"],
+        
+        # Combined options matching datasets and models
+        combination_options = [
+            "QLDE & Decision Tree",
+            "QLDE & SVM",
+            "STANDARD & Decision Tree",
+            "STANDARD & SVM",
+            "DE & Decision Tree",
+            "DE & SVM",
+            "PSO & Decision Tree",
+            "PSO & SVM",
+            "EOA & Decision Tree",
+            "EOA & SVM"
+        ]
+        
+        selected_combo = st.selectbox(
+            "Select Dataset & Model:",
+            combination_options,
             index=0,
-            help="Choose which clustering results to use as the target labels for classifier training."
+            help="Choose a combination of target clustering dataset and classification model."
         )
-        selected_algo = st.selectbox(
-            "Select Model for Details:",
-            ["Decision Tree", "SVM"],
-            index=0,
-            help="Choose a classification model to view its detailed performance, confusion matrix, and feature importances."
-        )
+        
+        # Parse selected dataset and algorithm
+        if "QLDE" in selected_combo:
+            selected_dataset = "QLDE (Paper)"
+        elif "STANDARD" in selected_combo:
+            selected_dataset = "STANDARD (Baseline)"
+        elif "DE" in selected_combo:
+            selected_dataset = "DE"
+        elif "PSO" in selected_combo:
+            selected_dataset = "PSO"
+        else:
+            selected_dataset = "EOA"
+            
+        if "Decision Tree" in selected_combo:
+            selected_algo = "Decision Tree"
+        else:
+            selected_algo = "SVM"
+            
         st.markdown("---")
-        st.caption(f"Training target: Customer segments derived from {selected_dataset} clustering.")
+        st.caption(f"Target: {selected_dataset} | Model: {selected_algo}")
 
     # Load labeled dataset based on selection
     df_clustered = load_selected_labeled_data(selected_dataset)
 
     # ── Train Classifiers and Collect Metrics ─────────────────────────────────────
-    with st.spinner(f"Training models on {selected_dataset}..."):
+    with st.spinner(f"Loading/Training models on {selected_dataset}..."):
         dt_metrics, dt_importance, dt_model = run_decision_tree(df_clustered)
         svm_metrics, svm_importance, svm_model, svm_scaler = run_svm(df_clustered)
 
@@ -199,8 +226,19 @@ def show_supervised_learning():
             else:
                 input_scaled = svm_scaler.transform(input_arr)
                 pred_cluster = int(svm_model.predict(input_scaled)[0])
-                pred_proba = svm_model.predict_proba(input_scaled)[0]
                 classes = svm_model.classes_
+                # Check if model has probability capability
+                if getattr(svm_model, "probability", False):
+                    pred_proba = svm_model.predict_proba(input_scaled)[0]
+                else:
+                    # Fallback for SVC without probability calibration
+                    pred_proba = np.zeros(len(classes))
+                    try:
+                        pred_idx = np.where(classes == pred_cluster)[0][0]
+                        pred_proba[pred_idx] = 1.0
+                    except IndexError:
+                        if len(classes) > 0:
+                            pred_proba[0] = 1.0
             
             segment_name = CLUSTER_NAMES.get(pred_cluster, f"Cluster {pred_cluster}")
             color = CLUSTER_COLORS.get(pred_cluster, "#A39CF7")

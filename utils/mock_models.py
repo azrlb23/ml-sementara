@@ -232,24 +232,41 @@ def run_decision_tree(df_clustered: pd.DataFrame) -> tuple[dict, dict, DecisionT
     return metrics, importance, model
 
 
-@st.cache_data(show_spinner="Training SVM...")
+@st.cache_data(show_spinner="Loading SVM...")
 def run_svm(df_clustered: pd.DataFrame) -> tuple[dict, dict, SVC, StandardScaler]:
     """Support Vector Machine (SVM) classifier (Z-score scaled, class_weight='balanced')."""
     X_train, X_test, y_train, y_test = _prep_classification_data(df_clustered)
     
-    # Scale features
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    # Try to load pre-trained models from the repository
+    model = load_model_if_exists("model_svm_classification.pkl")
+    scaler = load_model_if_exists("scaler_svm.pkl")
+    
+    # Check if the loaded model is compatible with the target dataset (same number of features and samples)
+    # The pre-trained model from the repo was trained on the QLDE dataset with 4335 rows.
+    use_pretrained = (
+        model is not None 
+        and scaler is not None 
+        and len(df_clustered) == 4335
+    )
+    
+    if use_pretrained:
+        # Use exact pre-trained scaler and model from repository
+        X_train_scaled = scaler.transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
+    else:
+        # Fallback to dynamic training if using a different dataset or model not found
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
 
-    # Limit training data to 2000 samples to keep training fast, matching the notebooks
-    X_train_svm = X_train_scaled[:2000]
-    y_train_svm = y_train[:2000]
+        # Limit training data to 2000 samples to keep training fast, matching the notebooks
+        X_train_svm = X_train_scaled[:2000]
+        y_train_svm = y_train[:2000]
 
-    model = SVC(kernel='rbf', probability=True, random_state=42, class_weight='balanced')
-    model.fit(X_train_svm, y_train_svm)
+        model = SVC(kernel='rbf', probability=True, random_state=42, class_weight='balanced')
+        model.fit(X_train_svm, y_train_svm)
+
     y_pred = model.predict(X_test_scaled)
-
     metrics = _compute_metrics(y_test, y_pred)
     
     # Permutation importance for SVM feature importance
