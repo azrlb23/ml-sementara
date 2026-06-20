@@ -41,8 +41,8 @@ def show_unsupervised_learning():
         st.markdown("## Clustering Controls")
         algorithm = st.selectbox(
             "Select Algorithm to Analyze:",
-            ["K-Means Standard", "K-Means + DE", "K-Means + PSO", "K-Means + EOA", "K-Means QLDE"],
-            index=4,
+            ["K-Means Standard", "K-Means + DE", "K-Means QLDE"],
+            index=2,
             help="Select the clustering optimization strategy to display in detail."
         )
         n_clusters = 6
@@ -125,13 +125,13 @@ def show_unsupervised_learning():
 
     with col_comp1:
         st.markdown('<div class="sl">Optimization Convergence Curve</div>', unsafe_allow_html=True)
-        st.caption("SSE reduction profiles across iterations for all metaheuristic models.")
+        st.caption("SSE reduction profiles across iterations for K-Means + DE and K-Means QLDE.")
         df_conv = get_convergence_curves(max_iter=50)
         st.plotly_chart(plot_convergence_curve(df_conv), use_container_width=True)
 
     with col_comp2:
-        st.markdown('<div class="sl">Performance Comparison (All Algorithms)</div>', unsafe_allow_html=True)
-        st.caption("Detailed 4-metric comparison across the five clustering strategies.")
+        st.markdown('<div class="sl">Performance Comparison (Selected Algorithms)</div>', unsafe_allow_html=True)
+        st.caption("Detailed 4-metric comparison across the three clustering strategies.")
         comp_metrics = get_algorithm_comparison_metrics(df, k=n_clusters)
         st.plotly_chart(plot_algorithm_comparison(comp_metrics), use_container_width=True)
 

@@ -124,7 +124,7 @@ def run_unsupervised_algorithm(df: pd.DataFrame, algorithm: str, k: int = 6) -> 
 def get_convergence_curves(max_iter: int = 50) -> pd.DataFrame:
     """Generates actual SSE convergence data over iterations for the metaheuristics on X_pca."""
     from utils.data_loader import load_pca_data
-    from utils.algorithms import QLDE, KMeansDE, KMeansPSO, KMeansEOA
+    from utils.algorithms import QLDE, KMeansDE
     
     df_pca = load_pca_data().drop(columns=["CustomerID"])
     X_pca = df_pca.values
@@ -133,31 +133,23 @@ def get_convergence_curves(max_iter: int = 50) -> pd.DataFrame:
     de = KMeansDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
     de.fit(X_pca)
     
-    pso = KMeansPSO(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    pso.fit(X_pca)
-    
-    eoa = KMeansEOA(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
-    eoa.fit(X_pca)
-    
     qlde = QLDE(n_clusters=k, pop_size=15, max_iter=max_iter, random_state=42)
     qlde.fit(X_pca)
     
-    l = min(len(de.convergence_curve_), len(pso.convergence_curve_), len(eoa.convergence_curve_), len(qlde.convergence_curve_))
+    l = min(len(de.convergence_curve_), len(qlde.convergence_curve_))
     
     return pd.DataFrame({
         "Iteration": np.arange(1, l + 1),
         "K-Means + DE": de.convergence_curve_[:l],
-        "K-Means + PSO": pso.convergence_curve_[:l],
-        "K-Means + EOA": eoa.convergence_curve_[:l],
         "K-Means QLDE": qlde.convergence_curve_[:l],
     })
 
 
 @st.cache_data(show_spinner="Evaluating all algorithms for comparison...")
 def get_algorithm_comparison_metrics(df: pd.DataFrame, k: int = 6) -> dict:
-    """Evaluate all 5 algorithms dynamically to produce the comparison chart."""
+    """Evaluate selected algorithms dynamically to produce the comparison chart."""
     comparison = {}
-    for algo in ["K-Means Standard", "K-Means + DE", "K-Means + PSO", "K-Means + EOA", "K-Means QLDE"]:
+    for algo in ["K-Means Standard", "K-Means + DE", "K-Means QLDE"]:
         _, metrics = run_unsupervised_algorithm(df, algo, k=k)
         comparison[algo] = {
             "SSE": metrics["SSE"],
