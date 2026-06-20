@@ -143,10 +143,24 @@ def show_preprocessing():
         pca_selected.fit(X_scaled)
         
         # Loadings dataframe
+        var_labels = [
+            "Var1 (Recency)",
+            "Var2 (Frequency)",
+            "Var3 (TotalProducts)",
+            "Var4 (Monetary)",
+            "Var5 (AvgSpending)",
+            "Var6 (UniqueProducts)",
+            "Var7 (AvgDaysToPurchase)",
+            "Var8 (ExpectedPurchaseDays)",
+            "Var9 (FromUK)",
+            "Var10 (CancelFrequency)",
+            "Var11 (AvgMonthlySpending)"
+        ]
+        
         loadings = pd.DataFrame(
             pca_selected.components_.T,
-            index=features,
-            columns=[f"PC {i}" for i in range(1, n_selected + 1)]
+            index=var_labels,
+            columns=[f"PCA {i}" for i in range(1, n_selected + 1)]
         )
         
         fig_loadings = go.Figure(
@@ -170,7 +184,7 @@ def show_preprocessing():
             title="Contribution of Original Variables to PCA (Loading Matrix)",
             height=420
         )
-        fig_loadings.layout.yaxis.showgrid = False
+        fig_loadings.update_yaxes(autorange="reversed", showgrid=False)
 
         col_pca1, col_pca2 = st.columns(2)
         with col_pca1:
