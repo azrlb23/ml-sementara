@@ -6,29 +6,30 @@ Exploratory Data Analysis — Visualizes dataset characteristics and feature dis
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from utils.data_loader import load_clean_data, get_feature_columns, FEATURE_LABELS
+from utils.data_loader import load_clean_data, load_scaled_data, get_feature_columns, FEATURE_LABELS
 from utils.visualizer import (
-    plot_rfm_distribution,
-    plot_extended_features,
     plot_correlation_heatmap,
     plot_boxplots,
+    plot_all_features_distributions,
 )
 
 def show_eda():
+    # ── Load Data ─────────────────────────────────────────────────────────────────
+    df = load_clean_data()
+    scaled_df = load_scaled_data()
+    features = get_feature_columns()
+
     # ── Sidebar Controls ──────────────────────────────────────────────────────────
     with st.sidebar:
         st.markdown("## EDA Controls")
         show_raw_stats = st.checkbox("Show descriptive statistics", value=True)
-        show_rfm = st.checkbox("RFM Distributions", value=True)
-        show_extended = st.checkbox("Extended Features", value=True)
+        show_distributions = st.checkbox("Feature Distributions (All 11 Features)", value=True)
+        if show_distributions:
+            dist_mode = st.radio("Distribution Mode:", ["Raw Features (clip p99)", "Normalized Features (Z-Score)"], index=0)
         show_corr = st.checkbox("Correlation Heatmap", value=True)
         show_boxplot = st.checkbox("Box Plots (Outliers)", value=True)
         st.markdown("---")
         st.caption("Kelompok 6 · ML Final Project")
-
-    # ── Load Data ─────────────────────────────────────────────────────────────────
-    df = load_clean_data()
-    features = get_feature_columns()
 
     # ── Header ────────────────────────────────────────────────────────────────────
     st.markdown("""
@@ -62,18 +63,27 @@ def show_eda():
     # ── Descriptive Stats ─────────────────────────────────────────────────────────
     if show_raw_stats:
         st.markdown('<div class="sl">Descriptive Statistics</div>', unsafe_allow_html=True)
-        st.dataframe(df[features].describe().T.style.format("{:.2f}"), use_container_width=True)
+        tab_raw, tab_scaled = st.tabs(["Raw Features (Nilai Mentah)", "Normalized Features (Z-Score/Yeo-Johnson)"])
+        with tab_raw:
+            st.dataframe(df[features].describe().T.style.format("{:.2f}"), use_container_width=True)
+        with tab_scaled:
+            st.dataframe(scaled_df[features].describe().T.style.format("{:.4f}"), use_container_width=True)
 
-    # ── RFM Distributions ─────────────────────────────────────────────────────────
-    if show_rfm:
-        st.markdown('<div class="sl">RFM Distributions</div>', unsafe_allow_html=True)
-        st.plotly_chart(plot_rfm_distribution(df), use_container_width=True)
+    # ── Feature Distributions ─────────────────────────────────────────────────────
+    if show_distributions:
+        st.markdown(f'<div class="sl">Feature Distributions — {dist_mode}</div>', unsafe_allow_html=True)
+        if "Normalized" in dist_mode:
+            st.plotly_chart(plot_all_features_distributions(scaled_df, features, scaled=True), use_container_width=True)
+        else:
+            st.plotly_chart(plot_all_features_distributions(df, features, scaled=False), use_container_width=True)
 
         # Interactive single feature distribution selector
         st.markdown("**Analyze Specific Feature Distribution:**")
         selected_dist_feat = st.selectbox("Select Feature for Interactive Histogram:", features, index=2)
+        
+        detail_df = scaled_df if "Normalized" in dist_mode else df
         fig_hist = px.histogram(
-            df, x=selected_dist_feat, 
+            detail_df, x=selected_dist_feat, 
             color_discrete_sequence=["#7089ba"], 
             opacity=0.8,
             template="plotly_dark"
@@ -88,19 +98,37 @@ def show_eda():
         )
         st.plotly_chart(fig_hist, use_container_width=True)
 
-    # ── Extended Features ─────────────────────────────────────────────────────────
-    if show_extended:
-        st.markdown('<div class="sl">Extended Feature Distributions</div>', unsafe_allow_html=True)
-        st.plotly_chart(plot_extended_features(df), use_container_width=True)
-
-        with st.expander("Show Feature Definitions"):
-            for feat, label in FEATURE_LABELS.items():
-                st.markdown(f"- **`{feat}`** — {label}")
-
     # ── Correlation ───────────────────────────────────────────────────────────────
     if show_corr:
-        st.markdown('<div class="sl">Feature Correlation Matrix</div>', unsafe_allow_html=True)
-        st.plotly_chart(plot_correlation_heatmap(df, features), use_container_width=True)
+        st.markdown('<div class="sl">Feature Correlation Matrix (Normalized Features)</div>', unsafe_allow_html=True)
+        st.caption("Matriks korelasi antar fitur yang telah dinormalisasi menggunakan PowerTransformer (Yeo-Johnson). Sesuai dengan Gambar 7 pada paper.")
+        st.plotly_chart(plot_correlation_heatmap(scaled_df, features), use_container_width=True)
+        
+        # Highlight high correlation pairs (|r| > 0.6)
+        corr_matrix = scaled_df[features].corr()
+        high_corr = [
+            (i, j, corr_matrix.loc[i, j])
+            for i in features
+            for j in features
+            if i < j and abs(corr_matrix.loc[i, j]) > 0.6
+        ]
+        
+        if high_corr:
+            st.markdown("**Pasangan Fitur dengan Korelasi Tinggi (|r| > 0.6):**")
+            cols_corr = st.columns(2)
+            for idx_c, (a, b, r) in enumerate(sorted(high_corr, key=lambda x: -abs(x[2]))):
+                col_to_use = cols_corr[idx_c % 2]
+                label_a = FEATURE_LABELS.get(a, a)
+                label_b = FEATURE_LABELS.get(b, b)
+                col_to_use.markdown(
+                    f"""
+                    <div class="glass-card" style="margin-bottom: 8px; padding: 12px; border-left: 3px solid {'#e74c3c' if r < 0 else '#2ecc71'};">
+                        <span style="color: var(--color-steel); font-size: 13px;">{label_a} &harr; {label_b}</span>
+                        <div style="font-weight: bold; color: {'#e74c3c' if r < 0 else '#2ecc71'}; font-size: 16px;">r = {r:+.2f}</div>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
 
     # ── Box Plots ─────────────────────────────────────────────────────────────────
     if show_boxplot:

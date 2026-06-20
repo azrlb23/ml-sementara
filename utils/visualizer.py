@@ -9,6 +9,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
 import numpy as np
+from utils.data_loader import FEATURE_LABELS
 
 # ── Design Tokens ─────────────────────────────────────────────────────────────
 CLUSTER_COLORS = {
@@ -150,6 +151,56 @@ def plot_correlation_heatmap(df: pd.DataFrame, features: list[str]) -> go.Figure
     layout_dict.update(title="Feature Correlation Matrix", height=400)
     fig.update_layout(layout_dict)
     fig.layout.yaxis.showgrid = False
+    return fig
+
+
+def plot_all_features_distributions(df: pd.DataFrame, features: list[str], scaled: bool = False) -> go.Figure:
+    """4x3 panel histogram showing distributions for all 11 features (raw or normalized)."""
+    if not scaled:
+        subplot_titles = [f"{FEATURE_LABELS.get(f, f)} (Skew: {df[f].skew():.2f})" for f in features] + [""]
+    else:
+        subplot_titles = [f"{FEATURE_LABELS.get(f, f)} (μ: {df[f].mean():.2f}, σ: {df[f].std():.2f})" for f in features] + [""]
+
+    fig = make_subplots(
+        rows=4, cols=3,
+        subplot_titles=subplot_titles,
+        vertical_spacing=0.08,
+        horizontal_spacing=0.06
+    )
+
+    colors = ["#7089ba", "#ababab", "#ffffff", "#808080", "#7089ba", "#ababab", "#ffffff", "#808080", "#7089ba", "#ababab", "#ffffff"]
+
+    for idx, feat in enumerate(features):
+        r = (idx // 3) + 1
+        c = (idx % 3) + 1
+
+        x_data = df[feat]
+        if not scaled:
+            if feat != "FromUK":
+                cap = x_data.quantile(0.99)
+                x_data = x_data.clip(upper=cap)
+
+        fig.add_trace(
+            go.Histogram(
+                x=x_data,
+                name=feat,
+                marker_color=colors[idx % len(colors)],
+                opacity=0.85,
+                nbinsx=40,
+                showlegend=False,
+            ),
+            row=r, col=c,
+        )
+
+    layout_dict = BASE_LAYOUT.copy()
+    title_text = "Distribusi 11 Fitur Pelanggan (Setelah Z-Score Normalization)" if scaled else "Distribusi 11 Fitur Pelanggan (Nilai Mentah, clip p99)"
+    layout_dict.update(
+        title=title_text,
+        height=1000,
+        margin=dict(l=40, r=20, t=80, b=40)
+    )
+    fig.update_layout(layout_dict)
+    fig.update_traces(marker_line_color="rgba(0,0,0,0.5)", marker_line_width=0.5)
     return fig
 
 

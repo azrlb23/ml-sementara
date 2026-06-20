@@ -33,6 +33,6 @@ print(aturan_bisnis)
 
 # 4. EXPORT MODEL KE FOLDER 'models'
 os.makedirs('../models', exist_ok=True)
-joblib.dump(model_dt, '../models/model_dt_classification.pkl')
-print("\n[SUCCESS] Model Decision Tree diekspor ke '../models/model_dt_classification.pkl'")
+joblib.dump(model_dt, '../models/model_dt_classification_standard.pkl')
+print("\n[SUCCESS] Model Decision Tree diekspor ke '../models/model_dt_classification_standard.pkl'")
 

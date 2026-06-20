@@ -1,6 +1,7 @@
 # === Cell 1 ===# ============================================================
 # Import Libraries
 # ============================================================
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -664,6 +665,18 @@ results_qlde = {
     'Calinski-Harabasz': ch,
     'K'          : K_OPTIMAL
 }
+
+# 1. Pastikan direktori tujuan sudah ada sebelum menyimpan
+os.makedirs('../models', exist_ok=True)
+
+# 2. Eksekusi penyimpanan array
+np.save('../models/qlde_inertia.npy', np.array(sse))
+np.save('../models/qlde_silhouette.npy', np.array(sil)) 
+np.save('../models/qlde_db_score.npy', np.array(db))
+np.save('../models/qlde_ch_score.npy', np.array(ch))
+np.save('../models/qlde_runtime.npy', np.array(t_elapsed))
+np.save('../models/qlde_convergence.npy', np.array(qlde.convergence_curve_))
+
 print('\nHasil disimpan untuk perbandingan dengan algoritma lain.')
 
 # === Cell 12 ===# ============================================================

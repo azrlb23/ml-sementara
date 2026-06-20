@@ -6,6 +6,13 @@ notebooks_dir = r"d:\Machine Learning\segmentation-web\temp_repo\notebooks"
 output_dir = r"d:\Machine Learning\segmentation-web\extracted_code"
 os.makedirs(output_dir, exist_ok=True)
 
+# Clear existing .py files in output directory to avoid stale files
+for old_py in glob.glob(os.path.join(output_dir, "*.py")):
+    try:
+        os.remove(old_py)
+    except Exception as e:
+        print(f"Error removing {old_py}: {e}")
+
 notebook_files = glob.glob(os.path.join(notebooks_dir, "*.ipynb"))
 
 for nb_file in notebook_files:

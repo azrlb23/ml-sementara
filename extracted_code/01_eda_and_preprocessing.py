@@ -134,9 +134,25 @@ customer_df.describe().round(2)
 # Z-Score Normalization — Persamaan (14) paper
 # X = (Xo - mu) / sigma
 # ============================================================
-scaler     = StandardScaler()
-scaled_arr = scaler.fit_transform(customer_df)
-scaled_df  = pd.DataFrame(scaled_arr, columns=customer_df.columns, index=customer_df.index)
+# Pastikan 11 fitur siap (df_customer_raw)
+features = ['Var1', 'Var2', 'Var3', 'Var4', 'Var5', 'Var6', 'Var7', 'Var8', 'Var9', 'Var10', 'Var11']
+df_target = customer_df[features].copy()
+
+# 1. WINSORIZATION (Capping batas atas di 99% untuk meredam outlier tanpa membuangnya)
+for col in features:
+    # Jangan cap Var9 karena dia Binary (0/1)
+    if col != 'Var9': 
+        cap_value = df_target[col].quantile(0.99)
+        df_target[col] = df_target[col].clip(upper=cap_value)
+
+# 2. POWER TRANSFORMATION (Yeo-Johnson) + Z-SCORE SCALING
+# PowerTransformer secara otomatis menerapkan Yeo-Johnson dan menstandarisasi (mirip Z-score)
+from sklearn.preprocessing import PowerTransformer
+
+pt = PowerTransformer(method='yeo-johnson', standardize=True)
+scaled_arr = pt.fit_transform(df_target)
+
+scaled_df = pd.DataFrame(scaled_arr, columns=features, index=df_target.index)
 
 # Verifikasi hasil normalisasi
 print("=== Verifikasi Z-Score Normalization ===")

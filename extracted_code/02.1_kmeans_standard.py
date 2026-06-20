@@ -328,6 +328,18 @@ results_kmeans = {
     'Calinski-Harabasz': ch,
     'K'          : K_OPTIMAL
 }
+
+# 1. Pastikan direktori tujuan sudah ada sebelum menyimpan
+os.makedirs('../models', exist_ok=True)
+
+# 2. Eksekusi penyimpanan array
+np.save('../models/kmeans-standard_inertia.npy', np.array(sse))
+np.save('../models/kmeans-standard_silhouette.npy', np.array(sil))
+np.save('../models/kmeans-standard_db_score.npy', np.array(db))
+np.save('../models/kmeans-standard_ch_score.npy', np.array(ch))
+np.save('../models/kmeans-standard_runtime.npy', np.array(t_elapsed))
+# np.save('../models/kmeans-standard_convergence.npy', np.array(qlde.convergence_curve_))
+
 print('\nHasil disimpan untuk perbandingan dengan algoritma lain.')
 
 # === Cell 10 ===# ============================================================

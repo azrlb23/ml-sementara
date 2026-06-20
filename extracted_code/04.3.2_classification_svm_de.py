@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import classification_report
 
 # 1. BACA DATA (Gunakan Pemenang Clustering: Standard K-Means)
-df = pd.read_csv('../data/Labeled/hasildata_kmeans-standard.csv')
+df = pd.read_csv('../data/Labeled/hasildata_kmeans-de.csv')
 
 fitur = [f'Var{i}' for i in range(1, 12)]
 X = df[fitur]
@@ -30,12 +30,12 @@ model_svm.fit(X_train_scaled, y_train_svm)
 
 # Evaluasi
 prediksi_svm = model_svm.predict(X_test_scaled)
-print("=== CLASSIFICATION REPORT: SVM (STANDARD K-MEANS) ===\n")
+print("=== CLASSIFICATION REPORT: SVM (DE K-MEANS) ===\n")
 print(classification_report(y_test, prediksi_svm))
 
 # 4. EXPORT SCALER & MODEL KE FOLDER 'models'
 os.makedirs('../models', exist_ok=True)
-joblib.dump(scaler, '../models/scaler_svm.pkl')
-joblib.dump(model_svm, '../models/model_svm_classification.pkl')
+joblib.dump(scaler, '../models/scaler_svm_de.pkl')
+joblib.dump(model_svm, '../models/model_svm_classification_de.pkl')
 print("\n[SUCCESS] Scaler & Model SVM diekspor ke folder '../models/'!")
 

@@ -29,8 +29,6 @@ algos = {
     'K-means-QLDE': 'qlde',
     'Standard K-means': 'kmeans-standard',
     'K-means-DE': 'kmeans-de',
-    'K-means-PSO': 'kmeans-pso',
-    'K-means-EOA': 'kmeans-eoa'
 }
 
 results = {}

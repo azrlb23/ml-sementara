@@ -1,4 +1,6 @@
-# === Cell 1 ===import pandas as pd
+# === Cell 1 ===import joblib
+import pandas as pd
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
@@ -28,7 +30,13 @@ model_svm_qlde = SVC(kernel='rbf', random_state=42, class_weight='balanced')
 model_svm_qlde.fit(X_train_scaled, y_train_svm)
 
 # 5. Evaluasi
-prediksi_svm = model_svm_qlde.predict(X_test_scaled)
+prediksi_svm_qlde = model_svm_qlde.predict(X_test_scaled)
 print("=== CLASSIFICATION REPORT: SVM (QLDE) ===\n")
-print(classification_report(y_test, prediksi_svm, zero_division=0))
+print(classification_report(y_test, prediksi_svm_qlde, zero_division=0))
+
+# 5. EXPORT SCALER & MODEL KE FOLDER 'models'
+os.makedirs('../models', exist_ok=True)
+joblib.dump(scaler, '../models/scaler_svm_qlde.pkl')
+joblib.dump(model_svm_qlde, '../models/model_svm_classification_qlde.pkl')
+print("\n[SUCCESS] Scaler & Model SVM diekspor ke folder '../models/'!")
 
